@@ -31,10 +31,11 @@ env.bak/
 venv.bak/
 
 # --- Project Specific Datasets and Large Files ---
-dataset/
+# Ignorar las imágenes capturadas del dataset, pero conservar el modelo entrenado y sus métricas
+dataset/*
+!dataset/mobilevit_model.pth
+!dataset/training_metrics.json
 dataset.zip
-face_landmarker.task
-*.task
 *.zip
 *.tar.gz
 *.mp4
