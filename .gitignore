@@ -1,0 +1,68 @@
+# --- Python Cache & Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Virtual Environments ---
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Project Specific Datasets and Large Files ---
+dataset/
+dataset.zip
+face_landmarker.task
+*.task
+*.zip
+*.tar.gz
+*.mp4
+*.webm
+*.avi
+
+# --- Environments and Sensitive Files ---
+.env
+.env.*
+!.env.example
+secrets.json
+*.pem
+*.key
+
+# --- IDEs and Text Editors ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# --- Operating System Files ---
+.DS_Store
+Thumbs.db
+desktop.ini

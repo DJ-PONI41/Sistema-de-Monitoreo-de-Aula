@@ -1,0 +1,93 @@
+ightbox Modal -->
+    <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+        <div class="lightbox-card" onclick="event.stopPropagation()">
+            <button class="lightbox-close-card" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+            
+            <!-- Left Side (Media & Navigation) -->
+            <div class="lightbox-media-side">
+                <button class="lightbox-arrow lightbox-arrow-left" onclick="navigateLightbox(-1)" id="lightboxPrevBtn">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                
+                <div class="lightbox-img-wrapper">
+                    <img src="" alt="Muestra" id="lightboxImg">
+                    <canvas id="lightboxCanvas"></canvas>
+                </div>
+                
+                <button class="lightbox-arrow lightbox-arrow-right" onclick="navigateLightbox(1)" id="lightboxNextBtn">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <!-- Right Side (Data and Controls) -->
+            <div class="lightbox-info-side">
+                <div>
+                    <div class="lightbox-header">
+                        <div id="lightboxClassBadge" class="lightbox-class-badge atento">
+                            <i class="fa-solid fa-eye"></i> <span id="lightboxClassText">Atento</span>
+                        </div>
+                        <h3 id="lightboxTitle" style="font-size: 1.1rem; font-weight: 700;">Detalle del Frame</h3>
+                        <div id="lightboxFilename" class="lightbox-filename">-</div>
+                    </div>
+                    
+                    <!-- Toggle landmarks -->
+                    <div class="form-group" style="margin-bottom: 1.2rem;">
+                        <div class="switch-item" style="background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08);">
+                            <span style="font-weight: 500; color: var(--text-main); font-size: 0.85rem;"><i class="fa-solid fa-diagram-project"></i> Mostrar puntos de la cara</span>
+                            <label class="switch">
+                                <input type="checkbox" id="lightboxLandmarksToggle" onchange="toggleLandmarks(this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Head Pose Estimates -->
+                    <div class="pose-info-card" id="lightboxPoseCard">
+                        <div class="pose-info-title">
+                            <span>Estimación de Orientación</span>
+                            <span id="poseQualityStatus" class="stat-badge" style="font-size: 0.7rem; padding: 0.1rem 0.4rem;">Buscando...</span>
+                        </div>
+                        <div class="pose-grid">
+                            <div class="pose-val">
+                                <span>Pitch (Ceceo)</span>
+                                <strong id="posePitch">0.0°</strong>
+                            </div>
+                            <div class="pose-val">
+                                <span>Yaw (Guiñada)</span>
+                                <strong id="poseYaw">0.0°</strong>
+                            </div>
+                            <div class="pose-val">
+                                <span>Roll (Alabeo)</span>
+                                <strong id="poseRoll">0.0°</strong>
+                            </div>
+                        </div>
+                        <div class="pose-interpretation" id="poseInterpretation">-</div>
+                    </div>
+                    
+                    <!-- Acceptance Criteria Section -->
+                    <div class="criteria-box">
+                        <h4 id="criteriaTitle"><i class="fa-solid fa-circle-check"></i> Criterios de Aceptación</h4>
+                        <ul class="criteria-list" id="criteriaList">
+                            <!-- Bullet points injected dynamically -->
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Bottom controls -->
+                <div>
+                    <button class="btn btn-danger" style="width: 100%; border-radius: 12px; padding: 0.7rem;" onclick="deleteFrameFromLightbox()">
+                        <i class="fa-solid fa-trash-can"></i> Eliminar del Dataset
+                    </button>
+                    <div class="keyboard-tip">
+                        Usa las flechas <kbd style="background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px;">◄</kbd> y <kbd style="background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px;">►</kbd> para navegar
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    

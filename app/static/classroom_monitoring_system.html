@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoreo de Aula - Panel de Control</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome para iconos de la interfaz -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js para visualización de estadísticas reales -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Hoja de estilos externa -->
+    <link rel="stylesheet" href="classroom_monitoring_system.css?v=1.2">
+    <!-- Meta tags anti-caché de desarrollo -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar de Navegación Colapsable -->
+        <aside class="sidebar" id="app-sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-desktop-radar logo-icon"></i>
+                <h2>MONITOR DE AULA</h2>
+                <button class="sidebar-toggle-btn" id="btn-toggle-sidebar" title="Colapsar menú">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Centro de Control</span>
+                    <a href="#" class="nav-link active" data-view="dashboard" id="nav-dashboard">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Panel Principal</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="camera" id="nav-camera">
+                        <i class="fa-solid fa-video"></i>
+                        <span>Cámara en Vivo</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="roster" id="nav-roster">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Alumnos y Roster</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="inbox" id="nav-inbox">
+                        <i class="fa-solid fa-inbox"></i>
+                        <span>Bandeja de Incidentes</span>
+                        <span class="badge badge-total" id="badge-clips-count">2</span>
+                    </a>
+                    <a href="#" class="nav-link" data-view="settings" id="nav-settings">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>Configuración</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <span class="status-dot online"></span>
+                    <span>SISTEMA ONLINE</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Espacio de Trabajo Principal -->
+        <main class="main-content">
+            <!-- Cabecera Principal -->
+            <header class="top-header">
+                <div class="header-left">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <button class="sidebar-uncollapse-btn" id="btn-uncollapse-sidebar" style="display: none;">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <h1 id="view-title">Panel Principal</h1>
+                    </div>
+                    <p id="view-subtitle" class="text-muted">Monitoreo del aula en tiempo real y detección de comportamientos mediante IA</p>
+                </div>
+                
+                <div class="header-right" style="display: flex; gap: 20px; align-items: center;">
+                    <!-- Switch de Auto-Grabación de Evidencia -->
+                    <div class="hud-control-item" title="Graba automáticamente clips de 10s cuando un alumno copia">
+                        <span class="control-label" style="display: flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-circle-dot pulsing" id="evidence-rec-dot" style="display: none; color: #ff1744; font-size: 10px;"></i>
+                            Auto-Grabar:
+                        </span>
+                        <input type="checkbox" id="hud-switch-record-evidence" class="toggle-switch-input">
+                        <label for="hud-switch-record-evidence" class="toggle-switch-label"></label>
+                    </div>
+                    <!-- Switch de Privacidad de Cámara -->
+                    <div class="hud-control-item" title="Detiene temporalmente el procesamiento de cámara">
+                        <span class="control-label">Cámara Activa:</span>
+                        <input type="checkbox" id="hud-switch-active" class="toggle-switch-input" checked>
+                        <label for="hud-switch-active" class="toggle-switch-label"></label>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENEDOR DE VISTAS (SPA) -->
+            <div class="views-wrapper">
+                
+                <!-- 1. VISTA: PANEL PRINCIPAL (Vista Unificada) -->
+                <section class="view-panel active-view" id="view-dashboard">
+                    <div class="unified-app-layout">
+                        
+                        <!-- Barra de Controles de Monitor -->
+                        <div class="hud-header glass-panel">
+                            <div class="hud-brand">
+                                <span class="rec-dot pulsing" id="rec-indicator"></span>
+                                <strong>CANAL EN VIVO</strong>
+                            </div>
+                            
+                            <div class="hud-header-controls">
+                                <!-- Sensibilidad -->
+                                <div class="hud-control-item" title="Ajusta el umbral de confianza para disparar alertas">
+                                    <span class="control-label">Sensibilidad:</span>
+                                    <input type="range" class="custom-slider" id="hud-slider-sensitivity" min="10" max="90" value="60">
+                                    <strong id="hud-val-sensitivity">0.60</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Área de Monitoreo Central -->
+                        <div class="hud-main-workspace">
+                            
+                            <!-- Panel Cámara Feed -->
+                            <div class="hud-panel glass-panel" id="hud-camera-feed">
+                                <div class="hud-panel-title">
+                                    <i class="fa-solid fa-video text-danger"></i> CÁMARA #01 (AULA CENTRAL)
+                                </div>
+                                <div class="hud-panel-body relative-body">
+                                    <div class="camera-sim-container">
+                                        <div class="camera-title-badge"><i class="fa-solid fa-record-vinyl"></i> EN VIVO [30 FPS]</div>
+                                        <canvas id="hud-camera-canvas" class="canvas-overlay"></canvas>
+                                        
+                                        <!-- Overlay Alerta de Copia -->
+                                        <div class="suspicious-alert-box" id="hud-suspicious-alert-box">
+                                            <i class="fa-solid fa-circle-exclamation"></i>
+                                            <span class="title">COPIA DETECTADA</span>
+                                            <span class="reason" id="hud-alert-reason">Giro de cabeza</span>
+                                        </div>
+                                        
+                                        <div id="hud-camera-offline" class="camera-offline-overlay">
+                                            <i class="fa-solid fa-eye-slash"></i>
+                                            <span>CÁMARA APAGADA POR PRIVACIDAD</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Panel Alumnos Evaluados -->
+                            <div class="hud-panel glass-panel" id="hud-students-roster">
+                                <div class="hud-panel-title">
+                                    <i class="fa-solid fa-users"></i> ALUMNOS EVALUADOS
+                                </div>
+                                <div class="hud-panel-body students-scroll">
+                                    <div class="students-grid" id="hud-students-grid">
+                                        <!-- Alumno 1 -->
+                                        <div class="student-card active-card" data-student-id="1" data-state="atento">
+                                            <div class="student-avatar"><i class="fa-solid fa-user-graduate"></i></div>
+                                            <div class="student-name">Alumno 1</div>
+                                            <span class="student-state-badge">Atento</span>
+                                            <div class="student-bio-id" id="hud-student-bio-1">Matrícula Vinculada (98%)</div>
+                                            <div class="attention-gauge-container">
+                                                <div class="attention-gauge-fill" style="width: 88%"></div>
+                                            </div>
+                                        </div>
+                                        <!-- Alumno 2 -->
+                                        <div class="student-card" data-student-id="2" data-state="distraido">
+                                            <div class="student-avatar"><i class="fa-solid fa-user-graduate"></i></div>
+                                            <div class="student-name">Alumno 2</div>
+                                            <span class="student-state-badge">Distraído</span>
+                                            <div class="student-bio-id" id="hud-student-bio-2">Matrícula Vinculada (95%)</div>
+                                            <div class="attention-gauge-container">
+                                                <div class="attention-gauge-fill" style="width: 45%"></div>
+                                            </div>
+                                        </div>
+                                        <!-- Alumno 3 -->
+                                        <div class="student-card" data-student-id="3" data-state="somnoliento">
+                                            <div class="student-avatar"><i class="fa-solid fa-user-graduate"></i></div>
+                                            <div class="student-name">Alumno 3</div>
+                                            <span class="student-state-badge">Somnoliento</span>
+                                            <div class="student-bio-id" id="hud-student-bio-3">Matrícula Vinculada (99%)</div>
+                                            <div class="attention-gauge-container">
+                                                <div class="attention-gauge-fill" style="width: 30%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Controles Manuales de Roster -->
+                                    <div class="students-roster-controls">
+                                        <button class="btn btn-sm btn-outline" id="btn-hud-state-atento"><span class="dot dot-success"></span> Atento</button>
+                                        <button class="btn btn-sm btn-outline" id="btn-hud-state-distraido"><span class="dot dot-warning"></span> Distraído</button>
+                                        <button class="btn btn-sm btn-outline" id="btn-hud-state-somnoliento"><span class="dot dot-danger"></span> Somnoliento</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Buffer Circular -->
+                        <div class="hud-panel glass-panel" id="hud-timeline-buffer">
+                            <div class="hud-panel-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="fa-solid fa-clock-rotate-left"></i> BUFFER CIRCULAR EN MEMORIA RAM (10 SEGUNDOS)</span>
+                                <button class="btn btn-primary btn-sm" id="btn-hud-simulate-alert">
+                                    <i class="fa-solid fa-bolt"></i> Simular Alerta de Copia
+                                </button>
+                            </div>
+                            <div class="hud-panel-body" style="padding: 12px 20px;">
+                                <div class="buffer-timeline-track">
+                                    <div class="buffer-span before"></div>
+                                    <div class="buffer-event-marker" style="left: 60%;"></div>
+                                    <span class="buffer-event-label" style="left: calc(60% + 8px);">EVENTO DETECTADO</span>
+                                    <div class="buffer-span after"></div>
+                                    <div class="buffer-progress-handle" id="hud-buffer-playhead"></div>
+                                </div>
+                                <div class="buffer-labels">
+                                    <span>-5.0s (Pre-buffer)</span>
+                                    <span>Punto de Disparo (T=0)</span>
+                                    <span>+5.0s (Post-buffer)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Derecha: Bandeja de Incidentes -->
+                        <div class="hud-right-column">
+                            <div class="hud-panel glass-panel" id="hud-alerts-inbox">
+                                <div class="hud-panel-title">
+                                    <i class="fa-solid fa-inbox"></i> BANDEJA DE REVISIÓN DOCENTE
+                                </div>
+                                <div class="hud-panel-body inbox-layout">
+                                    <!-- Lista de Clips -->
+                                    <div class="inbox-sidebar-list" id="hud-clips-list">
+                                        <!-- Llenado dinámico -->
+                                    </div>
+                                    
+                                    <!-- Detalles del Reproductor -->
+                                    <div class="inbox-viewer-details">
+                                        <div class="video-player-mockup" id="hud-video-player">
+                                            <i class="fa-solid fa-circle-play video-play-btn" id="hud-btn-play-video"></i>
+                                            <canvas id="hud-player-canvas" class="canvas-player"></canvas>
+                                            <div class="video-player-placeholder" id="hud-player-placeholder" style="color: var(--text-secondary); font-size: 11px; text-align: center; pointer-events: none;">Sin incidentes registrados</div>
+                                            <div class="video-controls" id="hud-video-controls">
+                                                <span><i class="fa-solid fa-play"></i> 0:00 / 0:10</span>
+                                                <span>720p | WebM</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Metadatos y Confianza -->
+                                        <div class="viewer-meta-split">
+                                            <div class="viewer-metadata-section" id="hud-clip-metadata">
+                                                <table class="metadata-table">
+                                                    <tr><td>Archivo</td><td id="hud-meta-filename">-</td></tr>
+                                                    <tr><td>Fecha/Hora</td><td id="hud-meta-time">-</td></tr>
+                                                    <tr><td>Cripto Hash</td><td id="hud-meta-hash" style="font-size: 8px; font-family: monospace;">-</td></tr>
+                                                </table>
+                                            </div>
+                                            
+                                            <div class="viewer-gauge-section" id="hud-clip-confidence">
+                                                <div class="radial-gauge" style="width: 75px; height: 75px;">
+                                                    <svg class="radial-svg" width="80" height="80" style="transform: rotate(-90deg) scale(0.65);">
+                                                        <circle class="radial-bg" cx="40" cy="40" r="30"></circle>
+                                                        <circle class="radial-fill" id="hud-radial-fill" cx="40" cy="40" r="30" stroke-dasharray="188.4" stroke-dashoffset="188.4"></circle>
+                                                    </svg>
+                                                    <div class="radial-text">
+                                                        <span class="radial-val" id="hud-gauge-pct">0%</span>
+                                                        <span class="radial-label" style="font-size: 7px;">Confianza</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Acciones de Decisión -->
+                                        <div class="viewer-decision-actions" id="hud-clip-decisions" style="display: flex; gap: 8px;">
+                                            <button class="btn btn-success btn-sm" id="btn-hud-clip-confirm" style="flex: 2;"><i class="fa-solid fa-check"></i> Validar Copia</button>
+                                            <button class="btn btn-danger btn-sm" id="btn-hud-clip-discard" style="flex: 2;"><i class="fa-solid fa-xmark"></i> Descartar Alerta</button>
+                                            <button class="btn btn-outline btn-sm" id="btn-hud-clip-download" style="flex: 1; border-color: rgba(255,255,255,0.1); color: var(--text-primary);" title="Descargar Video Evidencia" disabled><i class="fa-solid fa-download"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- 2. VISTA: CÁMARA DETALLADA (Enfoque en feed y parámetros ML) -->
+                <section class="view-panel" id="view-camera">
+                    <div class="focus-layout-container">
+                        <div class="layout-main-panel glass-panel">
+                            <div class="hud-panel-title">MONITOREO DE VISIÓN ARTIFICIAL - FEED AMPLIADO</div>
+                            <div class="camera-focus-view-body">
+                                <div class="camera-focus-wrapper">
+                                    <canvas id="focus-camera-canvas" style="width: 100%; height: 400px; background: #03060a; border-radius: 4px;"></canvas>
+                                    <div class="camera-title-badge"><i class="fa-solid fa-record-vinyl"></i> INFERENCIA DE RED EN VIVO</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layout-side-panel glass-panel">
+                            <div class="hud-panel-title">PARÁMETROS DE DETECCIÓN</div>
+                            <div class="camera-settings-block">
+                                <div class="settings-option">
+                                    <label class="control-label">Malla Facial (Face Mesh)</label>
+                                    <div class="toggle-container">
+                                        <input type="checkbox" id="chk-toggle-facemesh" class="toggle-switch-input" checked>
+                                        <label for="chk-toggle-facemesh" class="toggle-switch-label"></label>
+                                    </div>
+                                </div>
+                                <div class="settings-option">
+                                    <label class="control-label">Vectores de Mirada (Gaze)</label>
+                                    <div class="toggle-container">
+                                        <input type="checkbox" id="chk-toggle-gaze" class="toggle-switch-input" checked>
+                                        <label for="chk-toggle-gaze" class="toggle-switch-label"></label>
+                                    </div>
+                                </div>
+                                <div class="settings-option">
+                                    <label class="control-label">Compensación Pitch de Cámara</label>
+                                    <input type="range" class="custom-slider" id="focus-pitch-offset-slider" min="-30" max="30" value="0">
+                                    <span class="text-sm font-mono" id="focus-val-pitch-offset">0°</span>
+                                </div>
+                                <div class="settings-option">
+                                    <label class="control-label">Sensibilidad Umbral</label>
+                                    <input type="range" class="custom-slider" id="focus-sensitivity-slider" min="10" max="90" value="60">
+                                    <span class="text-sm font-mono" id="focus-val-sensitivity">0.60</span>
+                                </div>
+                                <div class="settings-info-box">
+                                    <strong>MobileViT Backbone</strong><br>
+                                    El modelo procesa los landmarks en 24ms. Modificar la sensibilidad disminuye falsos positivos.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. VISTA: ALUMNOS Y ROSTER -->
+                <section class="view-panel" id="view-roster">
+                    <div class="focus-layout-container">
+                        <div class="layout-main-panel glass-panel">
+                            <div class="hud-panel-title">GESTIÓN DE ESTUDIANTES EN AULA</div>
+                            <div class="table-container">
+                                <table class="roster-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Avatar</th>
+                                            <th>Nombre Completo</th>
+                                            <th>Estado Actual</th>
+                                            <th>Probabilidad de Copia</th>
+                                            <th>Coincidencia Biométrica</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="roster-table-body">
+                                        <!-- Generado dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="layout-side-panel glass-panel">
+                            <div class="hud-panel-title">ACCIONES GRUPALES</div>
+                            <div class="roster-actions-block">
+                                <button class="btn btn-outline btn-block" id="btn-roster-biometrics">
+                                    <i class="fa-solid fa-fingerprint"></i> Alternar Identificadores
+                                </button>
+                                <div class="settings-info-box warning-box" style="margin-top: 15px;">
+                                    <strong>Privacidad de Datos (GDPR)</strong><br>
+                                    La identificación facial almacena firmas de landmarks. Habilite con precaución en producción escolar.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. VISTA: BANDEJA DE INCIDENTES AMPLIADA -->
+                <section class="view-panel" id="view-inbox">
+                    <div class="focus-layout-container">
+                        <div class="layout-main-panel glass-panel" style="grid-column: 1 / -1; display: flex; flex-direction: column;">
+                            <div class="hud-panel-title">VISOR DE EVIDENCIA DE INCIDENTES</div>
+                            <div class="inbox-focus-workspace" style="display: flex; flex: 1; min-height: 0;">
+                                <div class="inbox-sidebar-list" id="focus-clips-list" style="width: 280px; border-right: 1px solid rgba(255,255,255,0.05); max-height: none; overflow-y: auto;">
+                                    <!-- Llenado dinámico -->
+                                </div>
+                                <div class="inbox-focus-details" style="flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto;">
+                                    <div class="video-player-mockup" id="focus-video-player" style="height: 380px;">
+                                        <i class="fa-solid fa-circle-play video-play-btn" id="focus-btn-play-video"></i>
+                                        <canvas id="focus-player-canvas" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; opacity:0;"></canvas>
+                                        <div class="video-player-placeholder" id="focus-player-placeholder" style="color: var(--text-secondary); font-size: 13px; text-align: center; pointer-events: none;">Sin incidentes registrados</div>
+                                        <div class="video-controls" id="focus-video-controls">
+                                            <span><i class="fa-solid fa-play"></i> 0:00 / 0:10</span>
+                                            <span>720p | WebM</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Detalles del incidente y Confianza -->
+                                    <div class="focus-details-grid" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                                        <div class="focus-meta-card glass-panel" style="padding: 15px; background: rgba(255,255,255,0.01);">
+                                            <h3 style="font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 10px; text-transform: uppercase;">Detalles del Incidente</h3>
+                                            <table class="metadata-table" style="width: 100%;">
+                                                <tr><td>Estudiante</td><td id="focus-meta-student">-</td></tr>
+                                                <tr><td>Clase / Aula</td><td id="focus-meta-classroom">-</td></tr>
+                                                <tr><td>Fecha y Hora</td><td id="focus-meta-time">-</td></tr>
+                                                <tr><td>Nombre de Archivo</td><td id="focus-meta-filename">-</td></tr>
+                                                <tr><td>Hash Criptográfico</td><td id="focus-meta-hash" style="font-family: monospace; font-size: 10px;">-</td></tr>
+                                                <tr><td>Estado de Auditoría</td><td id="focus-meta-status">-</td></tr>
+                                            </table>
+                                        </div>
+                                        
+                                        <div class="focus-confidence-card glass-panel" style="padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                                            <h3 style="font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px;">Nivel de Confianza IA</h3>
+                                            <div class="radial-gauge" style="width: 100px; height: 100px; margin-bottom: 5px;">
+                                                <svg class="radial-svg" width="100" height="100" style="transform: rotate(-90deg) scale(0.9);">
+                                                    <circle class="radial-bg" cx="50" cy="50" r="40" stroke-width="6"></circle>
+                                                    <circle class="radial-fill" id="focus-radial-fill" cx="50" cy="50" r="40" stroke-width="6" stroke-dasharray="251.2" stroke-dashoffset="251.2"></circle>
+                                                </svg>
+                                                <div class="radial-text">
+                                                    <span class="radial-val" id="focus-gauge-pct" style="font-size: 18px;">0%</span>
+                                                    <span class="radial-label" style="font-size: 8px; color: var(--text-secondary);">Precisión</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="focus-decision-actions" style="display: flex; gap: 10px; width: 100%; margin-top: 15px;">
+                                                <button class="btn btn-success btn-sm" id="btn-focus-clip-confirm" style="flex: 1;"><i class="fa-solid fa-check"></i> Validar</button>
+                                                <button class="btn btn-danger btn-sm" id="btn-focus-clip-discard" style="flex: 1;"><i class="fa-solid fa-xmark"></i> Descartar</button>
+                                                <button class="btn btn-outline btn-sm" id="btn-focus-clip-download" style="flex: 1;" title="Descargar Evidencia en Disco" disabled><i class="fa-solid fa-download"></i> Descargar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. VISTA: CONFIGURACIÓN Y ANÁLISIS (Cajón Técnico) -->
+                <section class="view-panel" id="view-settings">
+                    <div class="hud-panel glass-panel" id="hud-technical-tabs">
+                        <div class="hud-panel-title drawer-tab-headers">
+                            <button class="tab-btn active-tab" data-tab="tab-ml-settings"><i class="fa-solid fa-brain"></i> Entrenamiento MobileViT</button>
+                            <button class="tab-btn" data-tab="tab-stats-settings"><i class="fa-solid fa-chart-line"></i> Estadísticas Generales</button>
+                            <button class="tab-btn" data-tab="tab-audio-settings"><i class="fa-solid fa-volume-high"></i> Alertas Sonoras</button>
+                            <button class="tab-btn" data-tab="tab-pdf-settings"><i class="fa-solid fa-file-pdf"></i> Exportar Reportes</button>
+                            <button class="tab-btn" data-tab="tab-smtp-settings"><i class="fa-solid fa-envelope"></i> Notificaciones SMTP</button>
+                        </div>
+                        
+                        <div class="hud-panel-body drawer-tab-bodies">
+                            <!-- Tab: ML Training -->
+                            <div class="drawer-tab-content active-content" id="tab-ml-settings">
+                                <div class="ml-setup-split-layout">
+                                    <!-- Left Panel: Extraction Form -->
+                                    <div class="ml-setup-card glass-panel" style="padding: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); background: rgba(15, 23, 42, 0.4);">
+                                        <h4 style="font-size: 11px; font-weight: 600; color: var(--primary); margin-bottom: 10px; text-transform: uppercase;">
+                                            <i class="fa-solid fa-scissors"></i> Extracción de Muestras (Fotogramas)
+                                        </h4>
+                                        <div class="ml-setup-form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label style="display: block; font-size: 9px; color: var(--text-secondary); margin-bottom: 4px;">Subir Video (MP4)</label>
+                                                <input type="file" id="videoFile" accept="video/*" class="form-control" style="background: rgba(2, 4, 6, 0.5); border: 1px solid rgba(255,255,255,0.05); padding: 4px; font-size: 10px; border-radius: 4px; color: #fff; width: 100%;">
+                                                <div style="font-size: 8px; color: var(--text-secondary); margin-top: 3px;">O ingresar ruta local del servidor:</div>
+                                                <input type="text" id="localVideoPath" placeholder="C:/ruta/video.mp4" class="form-control" style="background: rgba(2, 4, 6, 0.5); border: 1px solid rgba(255,255,255,0.05); padding: 4px; font-size: 10px; border-radius: 4px; color: #fff; width: 100%; margin-top: 2px;">
+                                            </div>
+                                            
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label style="display: block; font-size: 9px; color: var(--text-secondary); margin-bottom: 4px;">Clase a Extraer</label>
+                                                <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px;">
+                                                    <label style="font-size: 10px; display: flex; align-items: center; gap: 4px;">
+                                                        <input type="radio" name="classSelect" id="radioAtento" value="Atento" checked> Atento
+                                                    </label>
+                                                    <label style="font-size: 10px; display: flex; align-items: center; gap: 4px;">
+                                                        <input type="radio" name="classSelect" id="radioDistraido" value="Distraido"> Distraído
+                                                    </label>
+                                                    <label style="font-size: 10px; display: flex; align-items: center; gap: 4px;">
+                                                        <input type="radio" name="classSelect" id="radioSospechoso" value="Sospechoso"> Sospechoso
+                                                    </label>
+                                                </div>
+                                                <div style="margin-top: 8px;">
+                                                    <label style="display: block; font-size: 9px; color: var(--text-secondary); margin-bottom: 2px;">Intervalo de Frames: <strong id="valFrameInterval">10</strong></label>
+                                                    <input type="range" id="frameInterval" min="2" max="60" value="10" class="custom-slider" style="width: 100%;">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-group" style="margin-bottom: 0;">
+                                                <label style="display: block; font-size: 9px; color: var(--text-secondary); margin-bottom: 4px;">Aumentos y Filtros</label>
+                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 9px;">
+                                                    <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="augFlip" checked> Espejo (Flip)</label>
+                                                    <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="augBrightness" checked> Brillo</label>
+                                                    <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="augContrast" checked> Contraste</label>
+                                                    <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="augRotation" checked> Rotación</label>
+                                                    <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="augBlurNoise" checked> Ruido/Blur</label>
+                                                    <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="filterBlur" checked> Filtro Borroso</label>
+                                                    <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" id="filterPose" checked> Filtro Ángulo</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.03);">
+                                            <div style="display: flex; gap: 8px;">
+                                                <button class="btn btn-primary btn-sm" id="btnStartExtraction"><i class="fa-solid fa-play"></i> Extraer</button>
+                                                <button class="btn btn-danger btn-sm" id="btnStopExtraction" disabled><i class="fa-solid fa-stop"></i> Parar</button>
+                                                <button class="btn btn-outline btn-sm" id="btnClearDataset" style="border-color: rgba(239,68,68,0.3); color:#f87171;"><i class="fa-solid fa-trash-can"></i> Vaciar</button>
+                                            </div>
+                                            <div>
+                                                <button class="btn btn-outline btn-sm" id="btnDownloadDataset"><i class="fa-solid fa-file-zipper"></i> Descargar ZIP</button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Extraction Progress Indicator -->
+                                        <div id="extractionProgressSection" style="display: none; margin-top: 10px; background: rgba(2, 4, 6, 0.4); padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                            <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-secondary); margin-bottom: 2px;">
+                                                <span id="extractionStatusText">Procesando video...</span>
+                                                <span id="extractionProgressPct">0%</span>
+                                            </div>
+                                            <div class="difficulty-bar" style="height: 4px;">
+                                                <div class="difficulty-progress" id="extractionProgressBar" style="width: 0%; background: var(--primary);"></div>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-secondary); margin-top: 4px;">
+                                                <span>Frames: <strong id="valExtractedFrames">0/0</strong></span>
+                                                <span>Recortes: <strong id="valExtractedFaces">0</strong> (Aumentados: <strong id="valExtractedAug">0</strong>)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Gallery Section -->
+                                    <div class="ml-setup-card glass-panel" style="padding: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); background: rgba(15, 23, 42, 0.4);">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                            <h4 style="font-size: 11px; font-weight: 600; color: var(--primary); text-transform: uppercase;">
+                                                <i class="fa-solid fa-images"></i> Galería del Dataset
+                                            </h4>
+                                            <div style="display: flex; gap: 4px; font-size: 9px; color: var(--text-secondary);">
+                                                <span>Total: <strong id="totalDatasetSamples">0</strong></span>
+                                                <span>(Atento: <strong id="countAtento">0</strong> | Dist: <strong id="countDistraido">0</strong> | Sosp: <strong id="countSospechoso">0</strong>)</span>
+                                            </div>
+                                        </div>
+                                        <div class="gallery-tabs" style="display: flex; gap: 4px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 4px;">
+                                            <button class="btn btn-sm btn-outline active-gallery-tab" id="tabGalleryAtento" style="font-size: 9px; padding: 2px 8px;">Atento</button>
+                                            <button class="btn btn-sm btn-outline" id="tabGalleryDistraido" style="font-size: 9px; padding: 2px 8px;">Distraído</button>
+                                            <button class="btn btn-sm btn-outline" id="tabGallerySospechoso" style="font-size: 9px; padding: 2px 8px;">Sospechoso</button>
+                                        </div>
+                                        <div class="gallery-grid" id="datasetGalleryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 6px; max-height: 110px; overflow-y: auto; background: rgba(2,4,6,0.3); padding: 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                            <!-- Cropped images load here -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="ml-setup-card glass-panel" style="padding: 12px; border: 1px solid rgba(255,255,255,0.05); background: rgba(15, 23, 42, 0.4); margin-top: 15px;">
+                                    <h4 style="font-size: 11px; font-weight: 600; color: var(--primary); margin-bottom: 10px; text-transform: uppercase;">
+                                        <i class="fa-solid fa-brain"></i> Clasificador MobileViT - Entrenamiento
+     </h4>
+                                    
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label style="display: block; font-size: 9px; color: var(--text-secondary); margin-bottom: 4px;">Parámetros del Modelo</label>
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                                                <div>
+                                                    <span style="font-size: 8px; color: var(--text-secondary);">Épocas</span>
+                                                    <input type="number" id="trainEpochs" value="5" min="1" max="100" class="form-control" style="background: rgba(2,4,6,0.5); border: 1px solid rgba(255,255,255,0.05); padding: 4px; font-size: 10px; border-radius: 4px; color: #fff; width: 100%;">
+                                                </div>
+                                                <div>
+                                                    <span style="font-size: 8px; color: var(--text-secondary);">Batch Size</span>
+                                                    <input type="number" id="trainBatchSize" value="16" min="2" max="128" class="form-control" style="background: rgba(2,4,6,0.5); border: 1px solid rgba(255,255,255,0.05); padding: 4px; font-size: 10px; border-radius: 4px; color: #fff; width: 100%;">
+                                                </div>
+                                                <div>
+                                                    <span style="font-size: 8px; color: var(--text-secondary);">Learning Rate</span>
+                                                    <select id="trainLr" class="form-control" style="background: rgba(2,4,6,0.5); border: 1px solid rgba(255,255,255,0.05); padding: 4px; font-size: 10px; border-radius: 4px; color: #fff; width: 100%; height: 23px;">
+                                                        <option value="0.001">1e-3</option>
+                                                        <option value="0.0001" selected>1e-4</option>
+                                                        <option value="0.00001">1e-5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="display: flex; align-items: flex-end; gap: 8px;">
+                                            <button class="btn btn-primary btn-sm" id="btnStartRealTrain" style="background: rgba(14, 165, 233, 0.2); border-color: #0ea5e9; color: #38bdf8;"><i class="fa-solid fa-network-wired"></i> Entrenar Real</button>
+                                            <button class="btn btn-outline btn-sm" id="btnStopRealTrain" disabled><i class="fa-solid fa-ban"></i> Cancelar</button>
+                                            <button class="btn btn-outline btn-sm" id="btn-start-settings-train"><i class="fa-solid fa-play"></i> Simulación Demo</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-dashboard-grid" style="height: 180px;">
+                                        <div class="training-console" id="hud-train-settings-console" style="height: 100%;">
+                                            [SISTEMA] MobileViT-XS cargado para entrenamiento.<br>
+                                            Ajuste los parámetros y haga clic en "Entrenar Real" o "Simulación Demo".
+                                        </div>
+                                        <div class="training-plots" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                                            <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                                                <span>Épocas: <strong id="hud-settings-train-epoch">0/0</strong></span>
+                                                <span>Val Acc: <strong id="hud-settings-train-acc">0.0%</strong></span>
+                                            </div>
+                                            <div class="difficulty-bar" style="height: 6px; margin: 4px 0;">
+                                                <div class="difficulty-progress" id="hud-settings-train-progress" style="width: 0%; background: #00e676;"></div>
+                                            </div>
+                                            <div style="flex: 1; height: 110px; position: relative; margin-top: 4px;">
+                                                <canvas id="hud-settings-train-chart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Stats -->
+                            <div class="drawer-tab-content" id="tab-stats-settings">
+                                <div class="stats-sim-layout">
+                                    <div class="stats-card-mini">
+                                        <span class="text-xs text-muted">Resumen de Aula</span>
+                                        <div class="text-sm" style="margin-top: 5px;">Módulo: <strong>Física I</strong></div>
+                                        <div class="text-sm">Atención Promedio: <strong style="color:#00e676;">82.4%</strong></div>
+                                        <div class="text-sm">Incidentes Registrados: <strong style="color:#ff1744;">2</strong></div>
+                                    </div>
+                                    <div style="flex: 1; height: 130px; border: 1px solid rgba(255,255,255,0.03); border-radius: 4px; padding: 4px;">
+                                        <canvas id="hud-settings-stats-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Audio -->
+                            <div class="drawer-tab-content" id="tab-audio-settings">
+                                <div class="audio-setup-card">
+                                    <div class="bell-icon-wrapper" id="settings-bell-wrapper">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </div>
+                                    <div class="audio-settings-controls">
+                                        <div style="display: flex; gap: 15px; align-items: center;">
+                                            <span>Habilitar Alertas Sonoras (Web Audio API):</span>
+                                            <input type="checkbox" id="settings-audio-toggle" class="toggle-switch-input" checked>
+                                            <label for="settings-audio-toggle" class="toggle-switch-label"></label>
+                                        </div>
+                                        <button class="btn btn-primary" id="btn-settings-audio-test" style="margin-top: 10px;">
+                                            <i class="fa-solid fa-volume-high"></i> Generar Tono de Prueba
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab: PDF Export -->
+                            <div class="drawer-tab-content" id="tab-pdf-settings">
+                                <div class="pdf-export-layout">
+                                    <div class="pdf-preview-box">
+                                        <div class="pdf-header"><span>REPORTE ACADÉMICO</span></div>
+                                        <div class="pdf-body">
+                                            <strong>Curso: Física General</strong><br>
+                                            Sesión: 22/05/2026<br>
+                                            Porcentaje Atención: 82.4%
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" id="btn-settings-pdf-download">
+                                        <i class="fa-solid fa-file-pdf"></i> Compilar y Descargar Informe PDF
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tab: SMTP Notifications -->
+                            <div class="drawer-tab-content" id="tab-smtp-settings">
+                                <div class="smtp-setup-layout">
+                                    <div class="smtp-inputs-group">
+                                        <div class="form-group">
+                                            <label>Host Servidor SMTP</label>
+                                            <input type="text" class="form-control" value="smtp.colegio.edu" disabled>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Puerto SMTP</label>
+                                            <input type="text" class="form-control" value="587" disabled>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Correo Docente (Destino)</label>
+                                            <input type="text" class="form-control" value="profesor@colegio.edu" disabled>
+                                        </div>
+                                    </div>
+                                    <div class="phone-mockup-wrapper">
+                                        <div class="phone-shell">
+                                            <div class="phone-screen">
+                                                <div class="phone-notification" id="settings-phone-notif">
+                                                    <strong>📧 ALERTA DE COPIA</strong><br>
+                                                    Aula 4 - Mateo Díaz (95% Confianza)
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE ADVERTENCIA PRIVACIDAD (Identificación Biométrica) -->
+    <div class="ethical-popup-overlay" id="hud-ethical-modal">
+        <div class="warning-box glass-panel">
+            <h4>
+                <i class="fa-solid fa-triangle-exclamation"></i> CONFIGURACIÓN DE PRIVACIDAD BIOMÉTRICA
+            </h4>
+            <p class="text-xs text-secondary">
+                La recopilación y guardado de descriptores faciales permanentes en base de datos escolar infringe regulaciones locales sobre protección a menores (GDPR / LOPD).
+            </p>
+            <div class="ethical-modal-recommendation">
+                El sistema por defecto realiza detección y mapeo local efímero de puntos clave en la memoria RAM para inferencia técnica y no almacena imágenes faciales ni huellas biométricas.
+            </div>
+            <div class="modal-buttons-row">
+                <button class="btn btn-outline" id="btn-close-ethical">Entendido</button>
+                <button class="btn btn-primary" id="btn-bypass-ethical" style="background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #f87171;">
+                    Habilitar Match Visual
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+        <div class="lightbox-card" onclick="event.stopPropagation()">
+            <button class="lightbox-close-card" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+            
+            <!-- Left Side (Media & Navigation) -->
+            <div class="lightbox-media-side">
+                <button class="lightbox-arrow lightbox-arrow-left" onclick="navigateLightbox(-1)" id="lightboxPrevBtn">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                
+                <div class="lightbox-img-wrapper">
+                    <img src="" alt="Muestra" id="lightboxImg">
+                    <canvas id="lightboxCanvas"></canvas>
+                </div>
+                
+                <button class="lightbox-arrow lightbox-arrow-right" onclick="navigateLightbox(1)" id="lightboxNextBtn">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <!-- Right Side (Data and Controls) -->
+            <div class="lightbox-info-side">
+                <div>
+                    <div class="lightbox-header">
+                        <div id="lightboxClassBadge" class="lightbox-class-badge atento">
+                            <i class="fa-solid fa-eye"></i> <span id="lightboxClassText">Atento</span>
+                        </div>
+                        <h3 id="lightboxTitle" style="font-size: 1.1rem; font-weight: 700;">Detalle del Frame</h3>
+                        <div id="lightboxFilename" class="lightbox-filename">-</div>
+                    </div>
+                    
+                    <!-- Toggle landmarks -->
+                    <div class="form-group" style="margin-bottom: 1.2rem;">
+                        <div class="switch-item" style="background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; border-radius: 4px;">
+                            <span style="font-weight: 500; color: var(--text-main); font-size: 0.85rem;"><i class="fa-solid fa-diagram-project"></i> Mostrar puntos de la cara</span>
+                            <label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px;">
+                                <input type="checkbox" id="lightboxLandmarksToggle" onchange="toggleLandmarks(this.checked)" style="opacity: 0; width: 0; height: 0;">
+                                <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 20px;"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Head Pose Estimates -->
+                    <div class="pose-info-card" id="lightboxPoseCard" style="background: rgba(2, 4, 6, 0.3); border: 1px solid rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 12px;">
+                        <div class="pose-info-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 10px; color: var(--text-secondary);">
+                            <span>Estimación de Orientación</span>
+                            <span id="poseQualityStatus" class="stat-badge" style="font-size: 0.7rem; padding: 0.1rem 0.4rem; background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0,229,255,0.2); color: #00e5ff; border-radius: 10px;">Buscando...</span>
+                        </div>
+                        <div class="pose-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center;">
+                            <div class="pose-val" style="display: flex; flex-direction: column;">
+                                <span style="font-size: 7.5px; color: var(--text-secondary);">Pitch (Ceceo)</span>
+                                <strong id="posePitch" style="font-size: 11px; color: #fff;">0.0°</strong>
+                            </div>
+                            <div class="pose-val" style="display: flex; flex-direction: column;">
+                                <span style="font-size: 7.5px; color: var(--text-secondary);">Yaw (Guiñada)</span>
+                                <strong id="poseYaw" style="font-size: 11px; color: #fff;">0.0°</strong>
+                            </div>
+                            <div class="pose-val" style="display: flex; flex-direction: column;">
+                                <span style="font-size: 7.5px; color: var(--text-secondary);">Roll (Alabeo)</span>
+                                <strong id="poseRoll" style="font-size: 11px; color: #fff;">0.0°</strong>
+                            </div>
+                        </div>
+                        <div class="pose-interpretation" id="poseInterpretation" style="margin-top: 8px; font-size: 9px; color: var(--text-secondary); text-align: center;">-</div>
+                    </div>
+                    
+                    <!-- Acceptance Criteria Section -->
+                    <div class="criteria-box" style="background: rgba(2, 4, 6, 0.3); border: 1px solid rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 12px;">
+                        <h4 id="criteriaTitle" style="font-size: 10px; font-weight: 600; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-circle-check"></i> Criterios de Aceptación</h4>
+                        <ul class="criteria-list" id="criteriaList" style="list-style: none; padding-left: 0; font-size: 8.5px; color: var(--text-secondary); line-height: 1.4; display: flex; flex-direction: column; gap: 3px;">
+                            <!-- Bullet points injected dynamically -->
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Bottom controls -->
+                <div style="margin-top: auto;">
+                    <button class="btn btn-danger" style="width: 100%; border-radius: 8px; padding: 6px; font-size: 11px;" onclick="deleteFrameFromLightbox()">
+                        <i class="fa-solid fa-trash-can"></i> Eliminar del Dataset
+                    </button>
+                    <div class="keyboard-tip" style="text-align: center; font-size: 8px; color: var(--text-secondary); margin-top: 6px;">
+                        Usa las flechas <kbd style="background: rgba(255,255,255,0.1); padding: 1px 3px; border-radius: 3px;">◄</kbd> y <kbd style="background: rgba(255,255,255,0.1); padding: 1px 3px; border-radius: 3px;">►</kbd> para navegar
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Toast de Notificaciones -->
+    <div class="toast-container" id="toast-container"></div>
+    
+    <!-- Scripts del sistema -->
+    <script src="classroom_monitoring_system.js?v=1.2"></script>
+</body>
+</html>

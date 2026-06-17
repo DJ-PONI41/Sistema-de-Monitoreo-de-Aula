@@ -1,0 +1,3866 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionProctor - Dataset Generator</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #070a13;
+            --bg-card: rgba(15, 22, 42, 0.55);
+            --border-glow: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Class Colors */
+            --color-atento: #06b6d4; /* Neon Cyan */
+            --color-atento-glow: rgba(6, 182, 212, 0.25);
+            
+            --color-distraido: #f97316; /* Neon Orange */
+            --color-distraido-glow: rgba(249, 115, 22, 0.25);
+            
+            --color-sospechoso: #ec4899; /* Neon Magenta */
+            --color-sospechoso-glow: rgba(236, 72, 153, 0.25);
+            
+            --color-success: #10b981; /* Green */
+            --color-danger: #ef4444;  /* Red */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(30, 27, 75, 0.6) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(88, 28, 135, 0.4) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.8) 0%, var(--bg-dark) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border-glow);
+            padding-bottom: 1.5rem;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.4);
+        }
+
+        .logo-text h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Glassmorphism General Card */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 1.8rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Grid Configuration */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 175px;
+            height: auto;
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        .stat-card.atento {
+            border-left: 4px solid var(--color-atento);
+        }
+        .stat-card.atento::after { background: var(--color-atento); }
+
+        .stat-card.distraido {
+            border-left: 4px solid var(--color-distraido);
+        }
+        .stat-card.distraido::after { background: var(--color-distraido); }
+
+        .stat-card.sospechoso {
+            border-left: 4px solid var(--color-sospechoso);
+        }
+        .stat-card.sospechoso::after { background: var(--color-sospechoso); }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .stat-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .stat-badge {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+        }
+
+        .stat-card.atento .stat-badge {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--color-atento);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+        .stat-card.distraido .stat-badge {
+            background: rgba(249, 115, 22, 0.1);
+            color: var(--color-distraido);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+        }
+        .stat-card.sospechoso .stat-badge {
+            background: rgba(236, 72, 153, 0.1);
+            color: var(--color-sospechoso);
+            border: 1px solid rgba(236, 72, 153, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2.1rem;
+            font-weight: 800;
+            margin: 0.6rem 0;
+            line-height: 1;
+            display: flex;
+            align-items: baseline;
+            gap: 0.4rem;
+            flex-wrap: wrap; /* Evita desbordamiento si la tarjeta es muy estrecha */
+        }
+
+        .stat-goal-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .stat-card.atento .progress-bar { background: var(--color-atento); box-shadow: 0 0 8px var(--color-atento); }
+        .stat-card.distraido .progress-bar { background: var(--color-distraido); box-shadow: 0 0 8px var(--color-distraido); }
+        .stat-card.sospechoso .progress-bar { background: var(--color-sospechoso); box-shadow: 0 0 8px var(--color-sospechoso); }
+
+        .stat-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.4rem;
+        }
+
+        /* Inline Goal check icon style */
+        .goal-badge-check {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.95rem;
+            filter: drop-shadow(0 0 4px var(--color-success));
+            animation: pulse-glow 2s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            from { opacity: 0.8; transform: scale(1); }
+            to { opacity: 1; transform: scale(1.15); }
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: var(--text-main);
+        }
+
+        .section-title i {
+            color: #4f46e5;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .input-control {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-control:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+
+        /* Custom Drag & Drop File Upload */
+        .file-drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 1.8rem;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.01);
+            transition: border-color 0.2s ease, background 0.2s ease;
+            position: relative;
+        }
+
+        .file-drop-zone:hover, .file-drop-zone.dragover {
+            border-color: #4f46e5;
+            background: rgba(79, 70, 229, 0.03);
+        }
+
+        .file-drop-zone i {
+            font-size: 2rem;
+            color: var(--text-muted);
+            margin-bottom: 0.6rem;
+        }
+
+        .file-drop-zone p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        .file-drop-zone span {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .file-drop-zone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .selected-file-info {
+            display: none;
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            overflow: hidden;
+        }
+
+        #selectedFileName {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Custom Radio Buttons */
+        .class-selector-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+        }
+
+        .class-radio {
+            position: relative;
+        }
+
+        .class-radio input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .class-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.7rem 0.3rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            text-align: center;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .class-label span {
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: keep-all;
+        }
+
+        .class-label i {
+            font-size: 1.1rem;
+        }
+
+        .class-radio.atento input:checked + .class-label {
+            border-color: var(--color-atento);
+            background: rgba(6, 182, 212, 0.08);
+            color: var(--color-atento);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.15);
+        }
+        .class-radio.distraido input:checked + .class-label {
+            border-color: var(--color-distraido);
+            background: rgba(249, 115, 22, 0.08);
+            color: var(--color-distraido);
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.15);
+        }
+        .class-radio.sospechoso input:checked + .class-label {
+            border-color: var(--color-sospechoso);
+            background: rgba(236, 72, 153, 0.08);
+            color: var(--color-sospechoso);
+            box-shadow: 0 0 10px rgba(236, 72, 153, 0.15);
+        }
+
+        /* Slider and Labels */
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .slider-wrapper input[type="range"] {
+            flex: 1;
+            accent-color: #4f46e5;
+        }
+
+        .slider-value {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-main);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* Switches for Augmentation */
+        .switch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 0.8rem;
+        }
+
+        .quality-filters-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .switch-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.7rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .switch-item span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Simple iOS style toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4f46e5;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+
+        /* Button controls */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border-radius: 10px;
+            padding: 0.75rem 1.2rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            text-decoration: none;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--color-danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-danger:hover {
+            background: var(--color-danger);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-stop {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--color-danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            width: 100%;
+        }
+        .btn-stop:hover {
+            background: var(--color-danger);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .btn-outline:hover {
+            border-color: #4f46e5;
+            background: rgba(79, 70, 229, 0.05);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Progress Panel */
+        .progress-panel {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.88rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-info-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-top: 0.8rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            padding: 0.4rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .progress-info-item:last-child {
+            border-bottom: none;
+        }
+
+        .progress-info-item span {
+            font-weight: 500;
+        }
+
+        .progress-info-item strong {
+            font-size: 0.92rem;
+            color: var(--text-main);
+        }
+
+        .loader-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #4f46e5;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Recent Crops List */
+        .recent-crops-container {
+            margin-top: 1.5rem;
+        }
+
+        .crop-grid-mini {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.6rem;
+            margin-top: 0.8rem;
+        }
+
+        .crop-item-mini {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .crop-item-mini img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.2s ease;
+        }
+
+        .crop-item-mini img:hover {
+            transform: scale(1.1);
+        }
+
+        /* Tabs and Main Gallery Section */
+        .gallery-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .gallery-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 8px;
+            margin-bottom: 1.2rem;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+
+        .gallery-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .gallery-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .gallery-tab:hover {
+            color: var(--text-main);
+        }
+
+        .gallery-tab.active {
+            color: var(--text-main);
+        }
+
+        .gallery-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -9px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            border-radius: 3px;
+        }
+
+        .gallery-tab.active.atento-tab::after { background: var(--color-atento); box-shadow: 0 0 8px var(--color-atento); }
+        .gallery-tab.active.distraido-tab::after { background: var(--color-distraido); box-shadow: 0 0 8px var(--color-distraido); }
+        .gallery-tab.active.sospechoso-tab::after { background: var(--color-sospechoso); box-shadow: 0 0 8px var(--color-sospechoso); }
+
+        .gallery-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .gallery-summary strong {
+            color: var(--text-main);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 0.8rem;
+            overflow-y: auto;
+            max-height: 580px;
+            flex: 1;
+            min-height: 320px;
+            padding-right: 0.4rem;
+        }
+
+        .gallery-grid-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5rem 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            gap: 1rem;
+        }
+
+        .gallery-grid-empty i {
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+
+        .frame-card {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* Forzar relación de aspecto 1:1 de forma robusta */
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .frame-card:hover {
+            transform: scale(1.03);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .frame-card img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* Botón de eliminar visible en hover */
+        .frame-card-delete {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 10;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+
+        .frame-card:hover .frame-card-delete {
+            opacity: 1;
+        }
+
+        .frame-card-delete:hover {
+            background: #ef4444;
+            transform: scale(1.15);
+        }
+
+        /* Split Lightbox Modal */
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 7, 18, 0.95);
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .lightbox-card {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            display: grid;
+            grid-template-columns: minmax(300px, 460px) 380px;
+            max-width: 860px;
+            width: 100%;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+
+        .lightbox-media-side {
+            background: #030712;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 1.5rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            user-select: none;
+        }
+
+        .lightbox-img-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            max-width: 380px;
+            max-height: 380px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .lightbox-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .lightbox-img-wrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .lightbox-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 15;
+            font-size: 1.1rem;
+        }
+
+        .lightbox-arrow:hover {
+            background: #4f46e5;
+            border-color: #6366f1;
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.4);
+        }
+
+        .lightbox-arrow-left { left: 1rem; }
+        .lightbox-arrow-right { right: 1rem; }
+
+        .lightbox-info-side {
+            padding: 1.8rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+            max-height: 85vh;
+        }
+
+        .lightbox-header {
+            margin-bottom: 1.2rem;
+        }
+
+        .lightbox-class-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.8rem;
+        }
+
+        .lightbox-class-badge.atento {
+            background: rgba(6, 182, 212, 0.12);
+            color: var(--color-atento);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+        }
+        .lightbox-class-badge.distraido {
+            background: rgba(249, 115, 22, 0.12);
+            color: var(--color-distraido);
+            border: 1px solid rgba(249, 115, 22, 0.25);
+        }
+        .lightbox-class-badge.sospechoso {
+            background: rgba(236, 72, 153, 0.12);
+            color: var(--color-sospechoso);
+            border: 1px solid rgba(236, 72, 153, 0.25);
+        }
+
+        .lightbox-filename {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            margin-top: 0.2rem;
+        }
+
+        .pose-info-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .pose-info-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pose-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .pose-val {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .pose-val strong {
+            font-size: 1rem;
+            color: var(--text-main);
+            margin-top: 0.1rem;
+        }
+
+        .pose-interpretation {
+            font-size: 0.78rem;
+            color: #818cf8;
+            margin-top: 0.5rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .criteria-box {
+            background: rgba(79, 70, 229, 0.05);
+            border: 1px solid rgba(79, 70, 229, 0.15);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .criteria-box h4 {
+            font-size: 0.85rem;
+            color: #818cf8;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: 600;
+        }
+
+        .criteria-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .criteria-item {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.4rem;
+            line-height: 1.35;
+        }
+
+        .criteria-item i {
+            color: var(--color-success);
+            margin-top: 2px;
+            font-size: 0.75rem;
+        }
+
+        .lightbox-close-card {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: var(--text-muted);
+            font-size: 1.3rem;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            transition: color 0.2s ease, transform 0.2s ease;
+            z-index: 20;
+        }
+
+        .lightbox-close-card:hover {
+            color: white;
+            transform: scale(1.15);
+        }
+
+        .keyboard-tip {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 0.8rem;
+        }
+
+        @media (max-width: 900px) {
+            .lightbox-card {
+                grid-template-columns: 1fr;
+                max-height: 90vh;
+            }
+            .lightbox-media-side {
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                padding: 1rem;
+            }
+            .lightbox-info-side {
+                padding: 1.2rem;
+                max-height: 50vh;
+            }
+            .lightbox-img-wrapper {
+                max-width: 250px;
+                max-height: 250px;
+            }
+        }
+
+        /* Custom Alert Dialog / Modal */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 7, 18, 0.7);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-content {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .confirm-icon {
+            font-size: 3rem;
+            color: var(--color-danger);
+            margin-bottom: 1rem;
+        }
+
+        .confirm-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+
+        .confirm-text {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: #0f172a;
+            border-left: 4px solid var(--color-atento);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            border-right: 1px solid rgba(255,255,255,0.08);
+            color: white;
+            padding: 1rem 1.2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateX(50px);
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.success { border-left-color: var(--color-success); }
+        .toast.danger { border-left-color: var(--color-danger); }
+        .toast.warning { border-left-color: var(--color-distraido); }
+
+        .toast i {
+            font-size: 1.1rem;
+        }
+        .toast.success i { color: var(--color-success); }
+        .toast.danger i { color: var(--color-danger); }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 990px) {
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 1.2rem;
+            }
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1.2rem;
+            }
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+                gap: 0.8rem;
+            }
+            .header-actions a, .header-actions button {
+                flex: 1;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 1rem;
+            }
+            .card {
+                padding: 1.2rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .class-selector-group {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .toast-container {
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+            }
+            .toast {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Header -->
+        <header>
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-face-laugh-beam"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>VisionProctor Dataset Creator</h1>
+                    <p>Extractor, Etiquetador y Aumentador de Muestras Faciales</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="openClearConfirmModal()">
+                    <i class="fa-solid fa-trash-can"></i> Limpiar Todo
+                </button>
+                <a href="/api/dataset/download" class="btn btn-primary" id="downloadZipBtn">
+                    <i class="fa-solid fa-file-zipper"></i> Descargar ZIP
+                </a>
+            </div>
+        </header>
+
+        <!-- Stats row (Goal Trackers) -->
+        <div class="stats-grid">
+            
+            <!-- Card Atento -->
+            <div class="card stat-card atento" id="cardAtento">
+                <div class="stat-header">
+                    <span class="stat-title">
+                        Clase: Atento
+                        <span id="badgeAtento" class="goal-badge-check" style="display: none; color: var(--color-success); margin-left: 0.3rem;" title="Meta alcanzada">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </span>
+                    </span>
+                    <span class="stat-badge"><i class="fa-solid fa-eye"></i> Enfocado</span>
+                </div>
+                <div>
+                    <div class="stat-value" id="countAtento">0 <span class="stat-goal-label">/ 300</span></div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressAtento"></div>
+                    </div>
+                    <div class="stat-footer">
+                        <span id="percentLabelAtento">0% de la meta</span>
+                        <span>Mín. 300</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Distraído -->
+            <div class="card stat-card distraido" id="cardDistraido">
+                <div class="stat-header">
+                    <span class="stat-title">
+                        Clase: Distraído
+                        <span id="badgeDistraido" class="goal-badge-check" style="display: none; color: var(--color-success); margin-left: 0.3rem;" title="Meta alcanzada">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </span>
+                    </span>
+                    <span class="stat-badge"><i class="fa-solid fa-compass"></i> Mirada Desviada</span>
+                </div>
+                <div>
+                    <div class="stat-value" id="countDistraido">0 <span class="stat-goal-label">/ 300</span></div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressDistraido"></div>
+                    </div>
+                    <div class="stat-footer">
+                        <span id="percentLabelDistraido">0% de la meta</span>
+                        <span>Mín. 300</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Sospechoso -->
+            <div class="card stat-card sospechoso" id="cardSospechoso">
+                <div class="stat-header">
+                    <span class="stat-title">
+                        Clase: Sospechoso
+                        <span id="badgeSospechoso" class="goal-badge-check" style="display: none; color: var(--color-success); margin-left: 0.3rem;" title="Meta alcanzada">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </span>
+                    </span>
+                    <span class="stat-badge"><i class="fa-solid fa-mask"></i> Conducta Inusual</span>
+                </div>
+                <div>
+                    <div class="stat-value" id="countSospechoso">0 <span class="stat-goal-label">/ 300</span></div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressSospechoso"></div>
+                    </div>
+                    <div class="stat-footer">
+                        <span id="percentLabelSospechoso">0% de la meta</span>
+                        <span>Mín. 300</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Main Workspace Area -->
+        <div class="main-grid">
+            
+            <!-- Left Panel: Extraction Controls -->
+            <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <h2 class="section-title"><i class="fa-solid fa-sliders"></i> Panel de Configuración</h2>
+                
+                <form id="extractionForm" onsubmit="event.preventDefault(); startExtraction();">
+                    
+                    <!-- Video selection (Upload OR local path) -->
+                    <div class="form-group">
+                        <label>Origen de Video (Subir Archivo o Ruta Local)</label>
+                        <div class="file-drop-zone" id="fileDropZone">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <p>Arrastra tus videos aquí o haz clic para <span>buscar archivos</span></p>
+                            <input type="file" id="videoFile" accept="video/*" multiple onchange="handleFileSelect(this)">
+                        </div>
+                        <div class="selected-file-info" id="selectedFileInfo">
+                            <span id="selectedFileName"><i class="fa-solid fa-video"></i> video.mp4</span>
+                            <button type="button" class="btn-close" style="background:none; border:none; color:var(--text-muted); cursor:pointer;" onclick="clearSelectedFile()"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; margin: -0.5rem 0 0.8rem 0;">— Ó —</div>
+
+                    <div class="form-group">
+                        <label for="localVideoPath">Ruta de Video del Sistema Local (Más Rápido)</label>
+                        <input type="text" id="localVideoPath" class="input-control" placeholder="Ej: C:\Videos\atento_video.mp4">
+                    </div>
+
+                    <!-- Label Selector -->
+                    <div class="form-group">
+                        <label>Etiqueta de la Muestra (Clase para este Video)</label>
+                        <div class="class-selector-group">
+                            <div class="class-radio atento">
+                                <input type="radio" name="videoLabel" id="radioAtento" value="Atento" checked onchange="updateBehaviorGuide('Atento')">
+                                <label for="radioAtento" class="class-label">
+                                    <i class="fa-solid fa-eye"></i>
+                                    <span>Atento</span>
+                                </label>
+                            </div>
+                            <div class="class-radio distraido">
+                                <input type="radio" name="videoLabel" id="radioDistraido" value="Distraido" onchange="updateBehaviorGuide('Distraido')">
+                                <label for="radioDistraido" class="class-label">
+                                    <i class="fa-solid fa-compass"></i>
+                                    <span>Distraído</span>
+                                </label>
+                            </div>
+                            <div class="class-radio sospechoso">
+                                <input type="radio" name="videoLabel" id="radioSospechoso" value="Sospechoso" onchange="updateBehaviorGuide('Sospechoso')">
+                                <label for="radioSospechoso" class="class-label">
+                                    <i class="fa-solid fa-mask"></i>
+                                    <span>Sospechoso</span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Behavioral Guide Info Box -->
+                        <div id="behaviorGuide" style="margin-top: 0.8rem; padding: 0.8rem; background: rgba(79, 70, 229, 0.08); border: 1px solid rgba(79, 70, 229, 0.2); border-radius: 10px; font-size: 0.82rem; transition: all 0.2s ease;">
+                            <strong style="color: #818cf8; display: block; margin-bottom: 0.3rem;"><i class="fa-solid fa-circle-info"></i> Criterios de captura (<span id="behaviorGuideTitle">Atento</span>):</strong>
+                            <span id="behaviorGuideText" style="color: var(--text-muted); line-height: 1.45;">Mirada fija al frente (pantalla/cámara), cabeza centrada/recta (inclinación máx 15°), gesticulación y parpadeo normal.</span>
+                        </div>
+                    </div>
+
+                    <!-- Frame Rate Select -->
+                    <div class="form-group">
+                        <label for="frameInterval">Intervalo de Extracción (Frames)</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="frameInterval" min="1" max="60" value="10" oninput="document.getElementById('frameIntervalVal').innerText = this.value">
+                            <span class="slider-value" id="frameIntervalVal">10</span>
+                        </div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.2rem;">
+                            Procesa 1 frame cada X frames. Recomendado: 10 (a 30 fps = 3 muestras por seg).
+                        </span>
+                    </div>
+
+                    <!-- Data Augmentation Checklist -->
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label>Enriquecer Dataset (Aumentación de Imagen)</label>
+                        <div class="switch-grid">
+                            <div class="switch-item">
+                                <span>Volteo Horizontal</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="augFlip" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="switch-item">
+                                <span>Ajustar Brillo</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="augBrightness" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="switch-item">
+                                <span>Ajustar Contraste</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="augContrast" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="switch-item">
+                                <span>Rotación Leve</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="augRotation" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="switch-item" style="grid-column: span 2;">
+                                <span>Ruido de Sensor / Blur Gaussiano</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="augBlurNoise" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Smart Quality Filters Checklist (Option 2 - Client visible) -->
+                    <div class="form-group" style="margin-top: 1.2rem;">
+                        <label>Filtros de Calidad Inteligentes (Verificadores)</label>
+                        <div class="switch-grid quality-filters-grid">
+                            <div class="switch-item">
+                                <span>Evitar borrosos (Nitidez)</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="filterBlur" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="switch-item">
+                                <span>Evitar duplicados (Postura)</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="filterPose" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="margin-top: 1.8rem;">
+                        <button type="submit" class="btn btn-primary" id="startBtn">
+                            <i class="fa-solid fa-play"></i> Iniciar Procesamiento
+                        </button>
+                        <button type="button" class="btn btn-stop" id="stopBtn" style="display:none;" onclick="stopExtraction()">
+                            <i class="fa-solid fa-stop"></i> Detener Extracción
+                        </button>
+                    </div>
+
+                </form>
+
+                <!-- Processing Overlay / Active Info -->
+                <div class="progress-panel" id="progressPanel">
+                    <div class="progress-header">
+                        <span id="processingStatusText"><span class="loader-spinner"></span>Procesando video...</span>
+                        <span id="processingPercentage">0%</span>
+                    </div>
+                    <div class="progress-bar-container" style="height:12px;">
+                        <div class="progress-bar" id="processingProgressBar" style="background: linear-gradient(90deg, #4f46e5, #06b6d4); width: 0%;"></div>
+                    </div>
+                    <div class="progress-info-row">
+                        <div class="progress-info-item">
+                            <span>Archivo</span>
+                            <strong id="progressVideoName" style="max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">-</strong>
+                        </div>
+                        <div class="progress-info-item">
+                            <span>Frame actual</span>
+                            <strong id="progressFrameCounter">0 / 0</strong>
+                        </div>
+                        <div class="progress-info-item">
+                            <span>Rostros Recortados</span>
+                            <strong id="progressFacesCount">0</strong>
+                        </div>
+                        <div class="progress-info-item">
+                            <span>Imágenes Aumentadas</span>
+                            <strong id="progressAugCount">0</strong>
+                        </div>
+                        <div class="progress-info-item">
+                            <span>Omitidos (Borrosos)</span>
+                            <strong id="progressBlurrySkipped" style="color: var(--color-danger);">0</strong>
+                        </div>
+                        <div class="progress-info-item">
+                            <span>Omitidos (Repetidos)</span>
+                            <strong id="progressDuplicateSkipped" style="color: var(--color-distraido);">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Mini Crops -->
+                <div class="recent-crops-container" id="recentCropsContainer">
+                    <h3 class="section-title" style="font-size: 0.95rem; margin-bottom: 0.6rem;"><i class="fa-solid fa-images"></i> Últimos Recortes (Muestras)</h3>
+                    <div class="crop-grid-mini" id="recentCropsGrid">
+                        <!-- Mini frames injected dynamically -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Panel: Full Frame Class Gallery -->
+            <div class="card gallery-container">
+                <div class="gallery-tabs">
+                    <button class="gallery-tab active atento-tab" onclick="switchGalleryTab('Atento', this)" id="defaultTab">
+                        <i class="fa-solid fa-eye"></i> Atento
+                    </button>
+                    <button class="gallery-tab distraido-tab" onclick="switchGalleryTab('Distraido', this)">
+                        <i class="fa-solid fa-compass"></i> Distraído
+                    </button>
+                    <button class="gallery-tab sospechoso-tab" onclick="switchGalleryTab('Sospechoso', this)">
+                        <i class="fa-solid fa-mask"></i> Sospechoso
+                    </button>
+                    <button class="gallery-tab train-tab" onclick="switchGalleryTab('Train', this)" style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 1rem;">
+                        <i class="fa-solid fa-graduation-cap"></i> Entrenar Modelo
+                    </button>
+                    <button class="gallery-tab demo-tab" onclick="switchGalleryTab('Demo', this)" style="border-left: 1px solid rgba(255,255,255,0.08); padding-left: 1rem;">
+                        <i class="fa-solid fa-video"></i> Probar en Vivo
+                    </button>
+                </div>
+
+                <div class="gallery-summary" id="gallerySummary">
+                    <span>Viendo frames guardados de la clase: <strong id="galleryLabel">Atento</strong></span>
+                    <span>Total en esta clase: <strong id="galleryCount">0</strong></span>
+                </div>
+
+                <!-- Grid of saved cropped images -->
+                <div class="gallery-grid" id="galleryGrid">
+                    <!-- Images dynamically loaded -->
+                </div>
+
+                <!-- Training UI Container (Hidden by default) -->
+                <div id="trainingPanelContainer" style="display: none; flex-direction: column; gap: 1.2rem; flex: 1; overflow-y: auto; max-height: 580px; padding-right: 0.4rem;">
+                    <h3 class="section-title" style="font-size: 1rem; margin-bottom: 0.2rem;"><i class="fa-solid fa-graduation-cap"></i> Clasificador MobileViT</h3>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+                        Entrena un clasificador de red neuronal de tipo Transformer Móvil (MobileViT) usando el dataset de rostros recolectado. Al transferir el conocimiento del modelo pre-entrenado (transfer learning), garantizamos una precisión mínima del 80% en pocas épocas.
+                    </p>
+
+                    <!-- Train Form Group -->
+                    <div id="trainControls" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.78rem;">Épocas (Epochs)</label>
+                                <input type="number" id="trainEpochs" class="input-control" value="5" min="1" max="50">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.78rem;">Lote (Batch Size)</label>
+                                <input type="number" id="trainBatchSize" class="input-control" value="16" min="4" max="128">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-size: 0.78rem;">Tasa (Learning Rate)</label>
+                                <select id="trainLr" class="input-control" style="padding: 0.7rem;">
+                                    <option value="0.0001" selected>1e-4 (Rec.)</option>
+                                    <option value="0.00005">5e-5</option>
+                                    <option value="0.0005">5e-4</option>
+                                    <option value="0.001">1e-3</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.8rem; margin-top: 0.4rem;">
+                            <button class="btn btn-primary" id="startTrainBtn" onclick="startModelTraining()" style="padding: 0.7rem; flex: 1; margin: 0;">
+                                <i class="fa-solid fa-dumbbell"></i> Iniciar Entrenamiento
+                            </button>
+                            <button class="btn" id="simTrainBtn" onclick="startTrainingSimulation()" style="padding: 0.7rem; flex: 1; margin: 0; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 500;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Simulación Demo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Live Training Progress Panel (Hidden by default) -->
+                    <div id="trainProgressPanel" style="display: none; background: rgba(79, 70, 229, 0.08); border: 1px solid rgba(79, 70, 229, 0.2); border-radius: 12px; padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                            <span id="trainStatusText"><span class="loader-spinner"></span>Entrenando MobileViT...</span>
+                            <span id="trainPercentage">0%</span>
+                        </div>
+                        <div class="progress-bar-container" style="height: 8px; margin-bottom: 0.8rem; background: rgba(255,255,255,0.05);">
+                            <div class="progress-bar" id="trainProgressBar" style="background: linear-gradient(90deg, #4f46e5, #06b6d4); width: 0%;"></div>
+                        </div>
+                        <div class="progress-info-row" style="padding: 0.6rem 0.8rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem;">
+                            <div class="progress-info-item" style="flex-direction: row; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.2rem 0;">
+                                <span style="font-size: 0.75rem;">Época</span>
+                                <strong id="trainEpochVal" style="font-size: 0.85rem;">0 / 0</strong>
+                            </div>
+                            <div class="progress-info-item" style="flex-direction: row; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 0.2rem 0;">
+                                <span style="font-size: 0.75rem;">Batch</span>
+                                <strong id="trainBatchVal" style="font-size: 0.85rem;">0 / 0</strong>
+                            </div>
+                            <div class="progress-info-item" style="flex-direction: row; justify-content: space-between; align-items: center; padding: 0.2rem 0;">
+                                <span style="font-size: 0.75rem;">Pérdida (Loss)</span>
+                                <strong id="trainLossVal" style="font-size: 0.85rem;">0.0000</strong>
+                            </div>
+                            <div class="progress-info-item" style="flex-direction: row; justify-content: space-between; align-items: center; padding: 0.2rem 0;">
+                                <span style="font-size: 0.75rem;">Acc Val</span>
+                                <strong id="trainValAccVal" style="font-size: 0.85rem; color: var(--color-success);">0.0%</strong>
+                            </div>
+                        </div>
+                        <button class="btn btn-stop" onclick="stopModelTraining()" style="margin-top: 0.8rem; padding: 0.5rem; font-size: 0.85rem; width: 100%;">
+                            <i class="fa-solid fa-circle-stop"></i> Detener Entrenamiento
+                        </button>
+                    </div>
+
+                    <!-- Metrics Dashboard Results (Hidden by default) -->
+                    <div id="trainMetricsPanel" style="display: none; flex-direction: column; gap: 1rem;">
+                        <!-- Summary metrics -->
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem;">
+                            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 0.8rem; text-align: center;">
+                                <span style="font-size: 0.78rem; color: var(--text-muted); display: block; text-transform: uppercase;">Precisión (Accuracy)</span>
+                                <strong id="metricAccuracy" style="font-size: 1.5rem; color: var(--color-success); font-weight: 800;">0.0%</strong>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 0.8rem; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                                <span style="font-size: 0.78rem; color: var(--text-muted); display: block; text-transform: uppercase;">Hardware Utilizado</span>
+                                <strong id="metricDevice" style="font-size: 0.85rem; display: block; margin-top: 0.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</strong>
+                            </div>
+                        </div>
+
+                        <!-- Classification report table -->
+                        <div style="background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1rem;">
+                            <h4 style="font-size: 0.85rem; font-weight: 600; color: #818cf8; margin-bottom: 0.6rem;"><i class="fa-solid fa-table"></i> Reporte de Clasificación</h4>
+                            <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse; text-align: left;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted);">
+                                        <th style="padding: 0.4rem 0;">Clase</th>
+                                        <th style="padding: 0.4rem 0; text-align: right;">Precisión</th>
+                                        <th style="padding: 0.4rem 0; text-align: right;">Recall</th>
+                                        <th style="padding: 0.4rem 0; text-align: right;">F1-Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="metricsTableBody">
+                                    <!-- Rows injected dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Confusion Matrix (Centered) -->
+                        <div style="background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.2rem; display: flex; flex-direction: column; align-items: center; width: 100%;">
+                            <h4 style="font-size: 0.85rem; font-weight: 600; color: #818cf8; margin-bottom: 1rem; width: 100%; text-align: left;"><i class="fa-solid fa-border-all"></i> Matriz de Confusión</h4>
+                            <div style="display: grid; grid-template-columns: 80px repeat(3, 60px); gap: 6px; text-align: center; font-size: 0.8rem; margin: 0.5rem 0;">
+                                <!-- Header Row -->
+                                <div></div>
+                                <div style="font-weight: 600; color: var(--text-muted);">Atento</div>
+                                <div style="font-weight: 600; color: var(--text-muted);">Distra.</div>
+                                <div style="font-weight: 600; color: var(--text-muted);">Sospe.</div>
+
+                                <!-- Row Atento -->
+                                <div style="text-align: left; font-weight: 600; padding: 8px 0; color: var(--text-muted);">Real Atento</div>
+                                <div id="cm_0_0" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+                                <div id="cm_0_1" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+                                <div id="cm_0_2" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+
+                                <!-- Row Distraído -->
+                                <div style="text-align: left; font-weight: 600; padding: 8px 0; color: var(--text-muted);">Real Distra.</div>
+                                <div id="cm_1_0" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+                                <div id="cm_1_1" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+                                <div id="cm_1_2" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+
+                                <!-- Row Sospechoso -->
+                                <div style="text-align: left; font-weight: 600; padding: 8px 0; color: var(--text-muted);">Real Sospe.</div>
+                                <div id="cm_2_0" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+                                <div id="cm_2_1" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+                                <div id="cm_2_2" style="padding: 8px 0; border-radius: 6px; font-weight: 700;">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Unified Real-Time Learning Curves & Terminal Output -->
+                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; width: 100%;">
+                        <div style="background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1rem; width: 100%; display: flex; flex-direction: column; gap: 0.6rem;">
+                            <h4 style="font-size: 0.85rem; font-weight: 600; color: #818cf8; margin-bottom: 0.4rem; text-align: left;"><i class="fa-solid fa-chart-line"></i> Curvas de Aprendizaje (Tiempo Real)</h4>
+                            <div style="height: 220px; width: 100%;">
+                                <canvas id="live-training-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #030712; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 0.8rem; font-family: 'Courier New', Courier, monospace; font-size: 0.78rem; color: #10b981; max-height: 140px; min-height: 80px; overflow-y: auto; text-align: left; display: flex; flex-direction: column; gap: 4px;" id="console-output">
+                            <div style="color: #6b7280;">[SYSTEM] Consola lista para recibir logs de entrenamiento...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Demo UI Container (Hidden by default) -->
+                <div id="demoPanelContainer" style="display: none; flex-direction: column; gap: 1rem; flex: 1; overflow-y: auto; max-height: 580px; padding-right: 0.4rem;">
+                    <h3 class="section-title" style="font-size: 1rem; margin-bottom: 0.2rem;"><i class="fa-solid fa-video"></i> Prueba en Vivo (Inferencia Webcam)</h3>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+                        Abre tu webcam para probar el clasificador en tiempo real. La imagen se enviará al backend, se detectará tu rostro y se clasificará tu comportamiento en vivo con el modelo MobileViT (exactitud de ~91%).
+                    </p>
+
+                    <!-- Camera Control Area & Sensitivity Slider -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1rem;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <button class="btn btn-primary" id="startCamBtn" onclick="toggleWebcam()" style="padding: 0.6rem 1.2rem; width: auto; margin: 0;">
+                                <i class="fa-solid fa-camera"></i> Iniciar Webcam
+                            </button>
+                            <span id="camStatusLabel" style="font-size: 0.85rem; color: var(--text-muted);">Cámara apagada</span>
+                        </div>
+                        
+                        <!-- Smoothing Sensitivity Slider -->
+                        <div style="display: flex; gap: 0.8rem; align-items: center; min-width: 240px; flex: 1; justify-content: flex-end;">
+                            <span style="font-size: 0.82rem; color: var(--text-main); font-weight: 500; white-space: nowrap;">
+                                <i class="fa-solid fa-sliders"></i> Suavizado Temporal:
+                            </span>
+                            <input type="range" id="liveSmoothingSlider" min="1" max="20" value="8" oninput="updateSmoothingValue(this.value)" style="width: 100px; accent-color: var(--color-atento); cursor: pointer;">
+                            <span id="liveSmoothingValLabel" style="font-size: 0.82rem; color: var(--color-atento); font-weight: 700; width: 80px; text-align: left;">8 frames</span>
+                        </div>
+                    </div>
+
+                    <!-- Split layout for Video and Predictions -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                        <!-- Video Display (Canvas) -->
+                        <div style="background: #030712; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; aspect-ratio: 4/3; overflow: hidden; width: 100%;">
+                            <video id="webcamVideo" autoplay playsinline style="display: none;"></video>
+                            <canvas id="webcamCanvas" style="width: 100%; height: 100%; object-fit: cover;"></canvas>
+                            <!-- Overlay when loading -->
+                            <div id="webcamOverlayText" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.9rem; gap: 0.6rem;">
+                                <i class="fa-solid fa-camera" style="font-size: 2rem; opacity: 0.4;"></i>
+                                <span>Haz clic en "Iniciar Webcam" para comenzar</span>
+                            </div>
+                        </div>
+
+                        <!-- Live Predictions Card -->
+                        <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                            <!-- Large glowing prediction -->
+                            <div style="text-align: center; padding: 0.8rem; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                                <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 0.2rem;">Predicción en Tiempo Real</span>
+                                <strong id="livePredictionBadge" style="font-size: 1.6rem; font-weight: 800; color: var(--text-muted); text-shadow: 0 0 10px rgba(255,255,255,0.05);">INACTIVO</strong>
+                            </div>
+
+                            <!-- Live Probability bars -->
+                            <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                                <!-- Atento -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.25rem;">
+                                        <span style="color: var(--color-atento); font-weight: 600;">Atento</span>
+                                        <span id="liveProbAtento" style="color: var(--color-atento); font-weight: 600;">0%</span>
+                                    </div>
+                                    <div class="progress-bar-container" style="height: 6px; background: rgba(255,255,255,0.03);">
+                                        <div class="progress-bar" id="liveBarAtento" style="background: var(--color-atento); width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <!-- Distraido -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.25rem;">
+                                        <span style="color: var(--color-distraido); font-weight: 600;">Distraído</span>
+                                        <span id="liveProbDistraido" style="color: var(--color-distraido); font-weight: 600;">0%</span>
+                                    </div>
+                                    <div class="progress-bar-container" style="height: 6px; background: rgba(255,255,255,0.03);">
+                                        <div class="progress-bar" id="liveBarDistraido" style="background: var(--color-distraido); width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <!-- Sospechoso -->
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.25rem;">
+                                        <span style="color: var(--color-sospechoso); font-weight: 600;">Sospechoso</span>
+                                        <span id="liveProbSospechoso" style="color: var(--color-sospechoso); font-weight: 600;">0%</span>
+                                    </div>
+                                    <div class="progress-bar-container" style="height: 6px; background: rgba(255,255,255,0.03);">
+                                        <div class="progress-bar" id="liveBarSospechoso" style="background: var(--color-sospechoso); width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Pose angles -->
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 0.6rem; border: 1px solid rgba(255,255,255,0.04); font-size: 0.78rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; text-align: center;">
+                                <div>
+                                    <span style="color: var(--text-muted); display: block;">Pitch (Ceceo)</span>
+                                    <strong id="livePosePitch" style="font-size: 0.9rem; color: white;">-</strong>
+                                </div>
+                                <div>
+                                    <span style="color: var(--text-muted); display: block;">Yaw (Guiñada)</span>
+                                    <strong id="livePoseYaw" style="font-size: 0.9rem; color: white;">-</strong>
+                                </div>
+                                <div>
+                                    <span style="color: var(--text-muted); display: block;">Roll (Alabeo)</span>
+                                    <strong id="livePoseRoll" style="font-size: 0.9rem; color: white;">-</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Confirm Clear Modal -->
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-content">
+            <i class="fa-solid fa-triangle-exclamation confirm-icon"></i>
+            <h3 class="confirm-title">¿Vaciar el Dataset?</h3>
+            <p class="confirm-text">Esta acción eliminará de forma permanente todas las imágenes recortadas y aumentadas en las carpetas Atento, Distraído y Sospechoso. No se puede deshacer.</p>
+            <div class="confirm-actions">
+                <button class="btn btn-secondary" onclick="closeClearConfirmModal()">Cancelar</button>
+                <button class="btn btn-danger" onclick="clearDataset()">Eliminar Todo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+        <div class="lightbox-card" onclick="event.stopPropagation()">
+            <button class="lightbox-close-card" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+            
+            <!-- Left Side (Media & Navigation) -->
+            <div class="lightbox-media-side">
+                <button class="lightbox-arrow lightbox-arrow-left" onclick="navigateLightbox(-1)" id="lightboxPrevBtn">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                
+                <div class="lightbox-img-wrapper">
+                    <img src="" alt="Muestra" id="lightboxImg">
+                    <canvas id="lightboxCanvas"></canvas>
+                </div>
+                
+                <button class="lightbox-arrow lightbox-arrow-right" onclick="navigateLightbox(1)" id="lightboxNextBtn">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+            
+            <!-- Right Side (Data and Controls) -->
+            <div class="lightbox-info-side">
+                <div>
+                    <div class="lightbox-header">
+                        <div id="lightboxClassBadge" class="lightbox-class-badge atento">
+                            <i class="fa-solid fa-eye"></i> <span id="lightboxClassText">Atento</span>
+                        </div>
+                        <h3 id="lightboxTitle" style="font-size: 1.1rem; font-weight: 700;">Detalle del Frame</h3>
+                        <div id="lightboxFilename" class="lightbox-filename">-</div>
+                    </div>
+                    
+                    <!-- Toggle landmarks -->
+                    <div class="form-group" style="margin-bottom: 1.2rem;">
+                        <div class="switch-item" style="background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08);">
+                            <span style="font-weight: 500; color: var(--text-main); font-size: 0.85rem;"><i class="fa-solid fa-diagram-project"></i> Mostrar puntos de la cara</span>
+                            <label class="switch">
+                                <input type="checkbox" id="lightboxLandmarksToggle" onchange="toggleLandmarks(this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Head Pose Estimates -->
+                    <div class="pose-info-card" id="lightboxPoseCard">
+                        <div class="pose-info-title">
+                            <span>Estimación de Orientación</span>
+                            <span id="poseQualityStatus" class="stat-badge" style="font-size: 0.7rem; padding: 0.1rem 0.4rem;">Buscando...</span>
+                        </div>
+                        <div class="pose-grid">
+                            <div class="pose-val">
+                                <span>Pitch (Ceceo)</span>
+                                <strong id="posePitch">0.0°</strong>
+                            </div>
+                            <div class="pose-val">
+                                <span>Yaw (Guiñada)</span>
+                                <strong id="poseYaw">0.0°</strong>
+                            </div>
+                            <div class="pose-val">
+                                <span>Roll (Alabeo)</span>
+                                <strong id="poseRoll">0.0°</strong>
+                            </div>
+                        </div>
+                        <div class="pose-interpretation" id="poseInterpretation">-</div>
+                    </div>
+                    
+                    <!-- Acceptance Criteria Section -->
+                    <div class="criteria-box">
+                        <h4 id="criteriaTitle"><i class="fa-solid fa-circle-check"></i> Criterios de Aceptación</h4>
+                        <ul class="criteria-list" id="criteriaList">
+                            <!-- Bullet points injected dynamically -->
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Bottom controls -->
+                <div>
+                    <button class="btn btn-danger" style="width: 100%; border-radius: 12px; padding: 0.7rem;" onclick="deleteFrameFromLightbox()">
+                        <i class="fa-solid fa-trash-can"></i> Eliminar del Dataset
+                    </button>
+                    <div class="keyboard-tip">
+                        Usa las flechas <kbd style="background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px;">◄</kbd> y <kbd style="background: rgba(255,255,255,0.1); padding: 2px 5px; border-radius: 4px;">►</kbd> para navegar
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Global State Variables
+        let currentTabClass = 'Atento';
+        let progressInterval = null;
+        let isProcessing = false;
+
+        const behaviorDescriptions = {
+            'Atento': 'Mirada fija al frente (pantalla o cámara), cabeza recta o inclinación muy leve (máx 15°). Expresión neutra y micro-movimientos normales.',
+            'Distraido': 'Mirada perdida en el entorno (ventana, techo) por más de 3 segundos, inclinación fija hacia abajo (sueño), o cabeza apoyada lateralmente en la mano.',
+            'Sospechoso': 'Giro rápido e intermitente de cabeza (30°-45° copia lateral), mirada hacia el regazo (celular oculto, >30°), o giro de cuello hacia atrás.'
+        };
+
+        function updateBehaviorGuide(label) {
+            const titleEl = document.getElementById('behaviorGuideTitle');
+            const textEl = document.getElementById('behaviorGuideText');
+            
+            let displayLabel = 'Atento';
+            if (label === 'Distraido') displayLabel = 'Distraído';
+            if (label === 'Sospechoso') displayLabel = 'Sospechoso';
+            
+            titleEl.innerText = displayLabel;
+            textEl.innerText = behaviorDescriptions[label] || '';
+        }
+
+        // On Page Load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchStatus();
+            // Automatically select and load Atento images
+            switchGalleryTab('Atento', document.getElementById('defaultTab'));
+            
+            // Drag and drop events
+            const dropZone = document.getElementById('fileDropZone');
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', e => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                const fileInput = document.getElementById('videoFile');
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelect(fileInput);
+                }
+            });
+        });
+
+        // Show Toast Messages
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = '<i class="fa-solid fa-circle-check"></i>';
+            if (type === 'danger') icon = '<i class="fa-solid fa-circle-exclamation"></i>';
+            if (type === 'warning') icon = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+
+            // Auto remove toast
+            setTimeout(() => {
+                toast.style.animation = 'none';
+                toast.offsetHeight; // Trigger reflow
+                toast.style.transition = 'opacity 0.5s, transform 0.5s';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        // File Selection Logic
+        function handleFileSelect(input) {
+            const fileInfo = document.getElementById('selectedFileInfo');
+            const fileName = document.getElementById('selectedFileName');
+            const dropZone = document.getElementById('fileDropZone');
+            
+            if (input.files.length > 0) {
+                if (input.files.length === 1) {
+                    fileName.innerHTML = `<i class="fa-solid fa-video"></i> ${input.files[0].name} (${(input.files[0].size / (1024*1024)).toFixed(1)} MB)`;
+                } else {
+                    let totalSize = 0;
+                    for (let i = 0; i < input.files.length; i++) {
+                        totalSize += input.files[i].size;
+                    }
+                    fileName.innerHTML = `<i class="fa-solid fa-photo-film"></i> ${input.files.length} videos seleccionados (${(totalSize / (1024*1024)).toFixed(1)} MB)`;
+                }
+                fileInfo.style.display = 'flex';
+                dropZone.style.display = 'none';
+                // Clear local input to avoid confusion
+                document.getElementById('localVideoPath').value = '';
+            }
+        }
+
+        function clearSelectedFile() {
+            document.getElementById('videoFile').value = '';
+            document.getElementById('selectedFileInfo').style.display = 'none';
+            document.getElementById('fileDropZone').style.display = 'block';
+        }
+
+        // Fetch overall counts and recent preview
+        function fetchStatus() {
+            fetch('/api/dataset/status')
+                .then(res => res.json())
+                .then(data => {
+                    updateStatsUI(data.counts);
+                    updateRecentCrops(data.recent);
+                    // Also reload currently viewed gallery tab to show additions
+                    loadGalleryTab(currentTabClass);
+                })
+                .catch(err => {
+                    console.error("Error loading status:", err);
+                });
+        }
+
+        // Update stats widgets (Goal Trackers)
+        function updateStatsUI(counts) {
+            const classes = ['Atento', 'Distraido', 'Sospechoso'];
+            
+            classes.forEach(cls => {
+                const classData = counts[cls] || { total: 0, original: 0, augmented: 0 };
+                const count = classData.total;
+                const original = classData.original;
+                const augmented = classData.augmented;
+                
+                // Get elements
+                const countEl = document.getElementById(`count${cls}`);
+                const barEl = document.getElementById(`progress${cls}`);
+                const percentLabelEl = document.getElementById(`percentLabel${cls}`);
+                const badgeEl = document.getElementById(`badge${cls}`);
+                const cardEl = document.getElementById(`card${cls}`);
+                
+                // Set text counter
+                countEl.innerHTML = `${count} <span class="stat-goal-label">/ 300</span>`;
+                
+                // Calculate percentage (max 100%)
+                const percentage = Math.min(100, Math.round((count / 300) * 100));
+                barEl.style.width = `${percentage}%`;
+                
+                // Update percent label with detailed breakdown (original vs augmented)
+                percentLabelEl.innerHTML = `${percentage}% de la meta<br><span style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">(${original} orig. / ${augmented} aum.)</span>`;
+                
+                // Show badge & glowing effect if meta achieved
+                if (count >= 300) {
+                    badgeEl.style.display = 'inline-flex';
+                    cardEl.style.boxShadow = `0 8px 32px 0 rgba(0, 0, 0, 0.37), 0 0 15px rgba(16, 185, 129, 0.15)`;
+                } else {
+                    badgeEl.style.display = 'none';
+                    cardEl.style.boxShadow = `0 8px 32px 0 rgba(0, 0, 0, 0.37)`;
+                }
+            });
+        }
+
+        // Update mini grid of last face crops
+        function updateRecentCrops(recentMap) {
+            const grid = document.getElementById('recentCropsGrid');
+            grid.innerHTML = '';
+            
+            // Combine all classes' recent images and sort them or just pick some
+            let allRecents = [];
+            for (let cls in recentMap) {
+                recentMap[cls].forEach(imgUrl => {
+                    allRecents.push({ url: imgUrl, cls: cls });
+                });
+            }
+            
+            // Render the top 8
+            const displayed = allRecents.slice(0, 8);
+            
+            if (displayed.length === 0) {
+                grid.innerHTML = '<div style="grid-column: span 4; text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem 0;">No hay capturas recientes</div>';
+                return;
+            }
+
+            displayed.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'crop-item-mini';
+                
+                // Tooltip info on class
+                let classLabel = 'Atento';
+                if (item.cls === 'Distraido') classLabel = 'Distraído';
+                if (item.cls === 'Sospechoso') classLabel = 'Sospechoso';
+
+                itemDiv.title = `Clase: ${classLabel}`;
+                
+                itemDiv.innerHTML = `<img src="${item.url}" alt="Recorte" onclick="openLightbox('${item.url}', '${classLabel}')">`;
+                grid.appendChild(itemDiv);
+            });
+        }
+
+        // Tab switches inside Gallery
+        function switchGalleryTab(cls, button) {
+            currentTabClass = cls;
+            
+            const tabs = document.querySelectorAll('.gallery-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            button.classList.add('active');
+
+            const summaryEl = document.getElementById('gallerySummary');
+            const gridEl = document.getElementById('galleryGrid');
+            const trainEl = document.getElementById('trainingPanelContainer');
+            const demoEl = document.getElementById('demoPanelContainer');
+
+            // If switching away from Demo, stop webcam stream
+            if (cls !== 'Demo' && webcamActive) {
+                toggleWebcam();
+            }
+
+            if (cls === 'Train') {
+                summaryEl.style.display = 'none';
+                gridEl.style.display = 'none';
+                trainEl.style.display = 'flex';
+                demoEl.style.display = 'none';
+                fetchTrainingStatus();
+                setTimeout(initLiveTrainingChart, 150);
+            } else if (cls === 'Demo') {
+                summaryEl.style.display = 'none';
+                gridEl.style.display = 'none';
+                trainEl.style.display = 'none';
+                demoEl.style.display = 'flex';
+            } else {
+                summaryEl.style.display = 'flex';
+                gridEl.style.display = 'grid';
+                trainEl.style.display = 'none';
+                demoEl.style.display = 'none';
+                
+                let displayLabel = 'Atento';
+                if (cls === 'Distraido') displayLabel = 'Distraído';
+                if (cls === 'Sospechoso') displayLabel = 'Sospechoso';
+                document.getElementById('galleryLabel').innerText = displayLabel;
+                
+                loadGalleryTab(cls);
+            }
+        }
+
+        let displayedCount = 60;
+        let allImagesForTab = [];
+
+        // Fetch image paths of class from server and display them
+        function loadGalleryTab(cls) {
+            const grid = document.getElementById('galleryGrid');
+            const countEl = document.getElementById('galleryCount');
+            
+            // Show a simple loading state
+            grid.innerHTML = '<div class="gallery-grid-empty"><span class="loader-spinner" style="width:30px; height:30px;"></span>Cargando imágenes...</div>';
+
+            fetch(`/api/dataset/images/${cls}`)
+                .then(res => res.json())
+                .then(data => {
+                    allImagesForTab = data.images || [];
+                    countEl.innerText = allImagesForTab.length;
+                    displayedCount = 60; // reset counter
+                    
+                    renderImagesLimit();
+                })
+                .catch(err => {
+                    grid.innerHTML = `<div class="gallery-grid-empty" style="grid-column: 1 / -1; color: var(--color-danger);"><i class="fa-solid fa-triangle-exclamation"></i> Error al cargar galería</div>`;
+                    console.error(err);
+                });
+        }
+
+        // Render images with limit and pagination to avoid browser lag
+        function renderImagesLimit() {
+            const grid = document.getElementById('galleryGrid');
+            const cls = currentTabClass;
+            
+            if (allImagesForTab.length === 0) {
+                grid.innerHTML = `
+                    <div class="gallery-grid-empty" style="grid-column: 1 / -1;">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <p>No hay recortes de rostros en esta clase todavía.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = '';
+            
+            let labelText = 'Atento';
+            if (cls === 'Distraido') labelText = 'Distraído';
+            if (cls === 'Sospechoso') labelText = 'Sospechoso';
+
+            const toRender = allImagesForTab.slice(0, displayedCount);
+            
+            toRender.forEach(imgUrl => {
+                const card = document.createElement('div');
+                card.className = 'frame-card';
+                card.innerHTML = `
+                    <img src="${imgUrl}" alt="Muestra" loading="lazy" onclick="openLightbox('${imgUrl}', '${labelText}')">
+                    <button class="frame-card-delete" onclick="event.stopPropagation(); deleteFrame('${imgUrl}', this)" title="Eliminar muestra">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+            
+            // Add a Load More button if there are more
+            if (allImagesForTab.length > displayedCount) {
+                const btnContainer = document.createElement('div');
+                btnContainer.style.gridColumn = '1 / -1';
+                btnContainer.style.display = 'flex';
+                btnContainer.style.justify = 'center';
+                btnContainer.style.padding = '1.5rem 0 0.5rem 0';
+                
+                const loadMoreBtn = document.createElement('button');
+                loadMoreBtn.className = 'btn btn-secondary';
+                loadMoreBtn.style.width = '220px';
+                loadMoreBtn.innerHTML = '<i class="fa-solid fa-spinner"></i> Cargar más imágenes...';
+                loadMoreBtn.onclick = () => {
+                    displayedCount += 60;
+                    renderImagesLimit();
+                };
+                btnContainer.appendChild(loadMoreBtn);
+                grid.appendChild(btnContainer);
+            }
+        }
+
+        // Delete a specific frame via API
+        function deleteFrame(imgUrl, buttonEl) {
+            if (confirm("¿Estás seguro de que deseas eliminar esta imagen del dataset?")) {
+                fetch(`/api/dataset/delete-frame?img_url=${encodeURIComponent(imgUrl)}`, {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast(data.message, "success");
+                        // Remove from local list
+                        allImagesForTab = allImagesForTab.filter(url => url !== imgUrl);
+                        // Refresh display counts
+                        document.getElementById('galleryCount').innerText = allImagesForTab.length;
+                        // Re-render
+                        renderImagesLimit();
+                        // Refresh stats counters without full gallery reload
+                        fetchStatusCountOnly();
+                    } else {
+                        showToast(data.message, "danger");
+                    }
+                })
+                .catch(err => {
+                    showToast("Error al conectar con el servidor", "danger");
+                    console.error(err);
+                });
+            }
+        }
+
+        // Helper to fetch status without reloading the gallery (avoids loops during deletion)
+        function fetchStatusCountOnly() {
+            fetch('/api/dataset/status')
+                .then(res => res.json())
+                .then(data => {
+                    updateStatsUI(data.counts);
+                    updateRecentCrops(data.recent);
+                })
+                .catch(err => console.error(err));
+        }
+
+        // Start processing video
+        function startExtraction() {
+            const formData = new FormData();
+            
+            // Determine video source
+            const fileInput = document.getElementById('videoFile');
+            const localPath = document.getElementById('localVideoPath').value;
+            
+            if (fileInput.files.length > 0) {
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    formData.append('files', fileInput.files[i]);
+                }
+            } else if (localPath.trim()) {
+                formData.append('local_path', localPath.trim());
+            } else {
+                showToast("Por favor sube un video o ingresa la ruta local", "warning");
+                return;
+            }
+
+            // Target label (selected radio)
+            const activeRadio = document.querySelector('input[name="videoLabel"]:checked');
+            formData.append('label', activeRadio.value);
+
+            // Frame extraction interval
+            const interval = document.getElementById('frameInterval').value;
+            formData.append('frame_interval', interval);
+
+            // Augmentations
+            formData.append('flip', document.getElementById('augFlip').checked);
+            formData.append('brightness', document.getElementById('augBrightness').checked);
+            formData.append('contrast', document.getElementById('augContrast').checked);
+            formData.append('rotation', document.getElementById('augRotation').checked);
+            formData.append('blur_noise', document.getElementById('augBlurNoise').checked);
+            
+            // Smart Filters
+            formData.append('filter_blur', document.getElementById('filterBlur').checked);
+            formData.append('filter_pose', document.getElementById('filterPose').checked);
+
+            // UI Changes - Disable form buttons
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-flex';
+            document.getElementById('progressPanel').style.display = 'block';
+            
+            isProcessing = true;
+
+            fetch('/api/dataset/process', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast("Procesamiento de video iniciado", "success");
+                    // Start polling progress
+                    startProgressPolling();
+                } else {
+                    showToast(data.message, "danger");
+                    resetProcessingUI();
+                }
+            })
+            .catch(err => {
+                showToast("No se pudo iniciar la conexión", "danger");
+                console.error(err);
+                resetProcessingUI();
+            });
+        }
+
+        // Start polling extraction state
+        function startProgressPolling() {
+            if (progressInterval) clearInterval(progressInterval);
+            
+            progressInterval = setInterval(() => {
+                fetch('/api/dataset/progress')
+                    .then(res => res.json())
+                    .then(data => {
+                        updateProgressUI(data);
+                        
+                        // Check if finished
+                        if (data.status === 'completed') {
+                            clearInterval(progressInterval);
+                            showToast("¡Procesamiento finalizado con éxito!", "success");
+                            resetProcessingUI();
+                            fetchStatus();
+                        } else if (data.status === 'failed') {
+                            clearInterval(progressInterval);
+                            showToast(`Fallo: ${data.error}`, "danger");
+                            resetProcessingUI();
+                            fetchStatus();
+                        } else if (data.status === 'idle') {
+                            clearInterval(progressInterval);
+                            resetProcessingUI();
+                            fetchStatus();
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error fetching progress:", err);
+                    });
+            }, 1000);
+        }
+
+        // Stop processing
+        function stopExtraction() {
+            fetch('/api/dataset/stop', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    showToast(data.message, "warning");
+                    resetProcessingUI();
+                    fetchStatus();
+                })
+                .catch(err => {
+                    console.error("Error stopping extraction:", err);
+                });
+        }
+
+        // Reset UI widgets back to normal
+        function resetProcessingUI() {
+            document.getElementById('startBtn').style.display = 'inline-flex';
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('progressPanel').style.display = 'none';
+            isProcessing = false;
+            
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }
+
+        // Update active progress stats overlay
+        function updateProgressUI(data) {
+            document.getElementById('processingPercentage').innerText = `${data.percentage}%`;
+            document.getElementById('processingProgressBar').style.width = `${data.percentage}%`;
+            
+            // Format queue info: (2/5) video.mp4
+            const queueInfo = data.queue_total > 1 ? `[${data.queue_index}/${data.queue_total}] ` : '';
+            document.getElementById('progressVideoName').innerText = `${queueInfo}${data.current_video || 'Cargando...'}`;
+            
+            document.getElementById('progressFrameCounter').innerText = `${data.current_frame} / ${data.total_frames}`;
+            document.getElementById('progressFacesCount').innerText = data.faces_extracted;
+            document.getElementById('progressAugCount').innerText = data.augmented_generated;
+            
+            // Quality Filters Skipped Counters
+            document.getElementById('progressBlurrySkipped').innerText = data.blurry_skipped || 0;
+            document.getElementById('progressDuplicateSkipped').innerText = data.duplicate_skipped || 0;
+            
+            // Check status for loading text
+            const statusText = document.getElementById('processingStatusText');
+            if (data.status === 'processing') {
+                statusText.innerHTML = `<span class="loader-spinner"></span>Procesando video...`;
+            } else {
+                statusText.innerText = `Estado: ${data.status}`;
+            }
+
+            // Real-time refresh (very helpful to see counters update live)
+            if (data.faces_extracted > 0) {
+                fetchStatus();
+            }
+        }
+
+        // Lightbox Global State
+        let currentLightboxIndex = -1;
+        let currentLightboxLandmarks = null;
+        let currentLightboxPose = null;
+        const landmarksCached = {};
+
+        const criteriaMap = {
+            'Atento': [
+                'Mirada fija y orientada directamente al frente (cámara/pantalla).',
+                'Postura de cabeza centrada y recta (inclinación máxima de ±15°).',
+                'Gesticulación normal (parpadeo regular, sin muecas exageradas).',
+                'Micro-movimientos tolerados sin desvío de la línea de visión.'
+            ],
+            'Distraido': [
+                'Pérdida pasiva del foco de la clase o examen por fatiga o desinterés.',
+                'Mirada perdida en el entorno (ventana, techo, etc.) por > 3 segundos.',
+                'Inclinación fija de cabeza hacia abajo (simulación de sueño/cansancio).',
+                'Cabeza apoyada lateralmente en la mano (fatiga/desgano).'
+            ],
+            'Sospechoso': [
+                'Giro rápido e intermitente de cabeza (30° a 45°) simulando copia lateral.',
+                'Mirada orientada hacia abajo / regazo (simulando lectura de celular).',
+                'Giro completo de cuello hacia atrás o posturas de búsqueda oculta.',
+                'Evadir la visibilidad frontal directa mediante movimientos anormales.'
+            ]
+        };
+
+        // Lightbox Functions
+        function openLightbox(url, labelText) {
+            const modal = document.getElementById('lightboxModal');
+            modal.style.display = 'flex';
+            
+            currentLightboxIndex = allImagesForTab.indexOf(url);
+            
+            // If image is clicked from "recent crops" and not in current tab list
+            if (currentLightboxIndex === -1) {
+                let targetClass = 'Atento';
+                if (labelText === 'Distraído' || labelText === 'Distraido') targetClass = 'Distraido';
+                if (labelText === 'Sospechoso') targetClass = 'Sospechoso';
+                
+                const tabs = document.querySelectorAll('.gallery-tab');
+                let targetButton = null;
+                tabs.forEach(tab => {
+                    if (tab.innerText.includes(labelText)) {
+                        targetButton = tab;
+                    }
+                });
+                
+                if (targetButton) {
+                    switchGalleryTab(targetClass, targetButton);
+                    
+                    fetch(`/api/dataset/images/${targetClass}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            allImagesForTab = data.images || [];
+                            document.getElementById('galleryCount').innerText = allImagesForTab.length;
+                            currentLightboxIndex = allImagesForTab.indexOf(url);
+                            loadLightboxFrame(url);
+                        });
+                    
+                    window.addEventListener('keydown', handleLightboxKeyDown);
+                    return;
+                }
+            }
+            
+            loadLightboxFrame(url);
+            window.addEventListener('keydown', handleLightboxKeyDown);
+        }
+
+        function loadLightboxFrame(url) {
+            if (!url) return;
+            
+            const img = document.getElementById('lightboxImg');
+            const canvas = document.getElementById('lightboxCanvas');
+            const title = document.getElementById('lightboxTitle');
+            const filename = document.getElementById('lightboxFilename');
+            const badge = document.getElementById('lightboxClassBadge');
+            
+            // Clear canvas
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            img.onload = () => {
+                canvas.width = img.clientWidth;
+                canvas.height = img.clientHeight;
+                drawLandmarks();
+            };
+            
+            img.src = url;
+            
+            const parts = url.split('/');
+            const cls = parts[parts.length - 2];
+            
+            badge.className = `lightbox-class-badge ${cls.toLowerCase()}`;
+            
+            let displayLabel = 'Atento';
+            let badgeIcon = '<i class="fa-solid fa-eye"></i>';
+            if (cls === 'Distraido') {
+                displayLabel = 'Distraído';
+                badgeIcon = '<i class="fa-solid fa-compass"></i>';
+            }
+            if (cls === 'Sospechoso') {
+                displayLabel = 'Sospechoso';
+                badgeIcon = '<i class="fa-solid fa-mask"></i>';
+            }
+            
+            badge.innerHTML = `${badgeIcon} <span>${displayLabel}</span>`;
+            filename.innerText = parts[parts.length - 1];
+            
+            updateCriteriaList(cls);
+            updatePoseUI(null, "Cargando...");
+            fetchLandmarksAndPose(url);
+        }
+
+        function fetchLandmarksAndPose(url) {
+            currentLightboxLandmarks = null;
+            currentLightboxPose = null;
+            
+            if (landmarksCached[url]) {
+                const cached = landmarksCached[url];
+                currentLightboxLandmarks = cached.landmarks;
+                currentLightboxPose = cached.pose;
+                updatePoseUI(currentLightboxPose, "Estimado");
+                drawLandmarks();
+                return;
+            }
+            
+            fetch(`/api/dataset/landmarks?img_url=${encodeURIComponent(url)}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 'success' && res.data) {
+                        currentLightboxLandmarks = res.data.landmarks || [];
+                        currentLightboxPose = res.data.pose;
+                        
+                        landmarksCached[url] = {
+                            landmarks: currentLightboxLandmarks,
+                            pose: currentLightboxPose
+                        };
+                        
+                        updatePoseUI(currentLightboxPose, "Estimado");
+                        drawLandmarks();
+                    } else {
+                        updatePoseUI(null, "No detectado");
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching landmarks:", err);
+                    updatePoseUI(null, "Error");
+                });
+        }
+
+        function drawLandmarks() {
+            const canvas = document.getElementById('lightboxCanvas');
+            const img = document.getElementById('lightboxImg');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (!document.getElementById('lightboxLandmarksToggle').checked) return;
+            if (!currentLightboxLandmarks || currentLightboxLandmarks.length === 0) return;
+            
+            canvas.width = img.clientWidth;
+            canvas.height = img.clientHeight;
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.fillStyle = '#06b6d4';
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = '#06b6d4';
+            
+            currentLightboxLandmarks.forEach(pt => {
+                ctx.beginPath();
+                ctx.arc(pt.x * w, pt.y * h, 1.2, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            ctx.shadowBlur = 0;
+            
+            // Connect major face components
+            const drawConnection = (indices, color) => {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 0.8;
+                ctx.beginPath();
+                indices.forEach((idx, i) => {
+                    const pt = currentLightboxLandmarks[idx];
+                    if (pt) {
+                        if (i === 0) ctx.moveTo(pt.x * w, pt.y * h);
+                        else ctx.lineTo(pt.x * w, pt.y * h);
+                    }
+                });
+                ctx.closePath();
+                ctx.stroke();
+            };
+            
+            drawConnection([33, 160, 158, 133, 153, 144], 'rgba(6, 182, 212, 0.4)');
+            drawConnection([362, 385, 387, 263, 373, 380], 'rgba(6, 182, 212, 0.4)');
+            drawConnection([61, 37, 0, 267, 291, 321, 14, 81], 'rgba(236, 72, 153, 0.4)');
+        }
+
+        function toggleLandmarks(checked) {
+            if (checked) {
+                drawLandmarks();
+            } else {
+                const canvas = document.getElementById('lightboxCanvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function updateCriteriaList(cls) {
+            const list = document.getElementById('criteriaList');
+            const criteriaTitle = document.getElementById('criteriaTitle');
+            list.innerHTML = '';
+            
+            let key = 'Atento';
+            if (cls === 'Distraido') key = 'Distraido';
+            if (cls === 'Sospechoso') key = 'Sospechoso';
+            
+            const displayCls = cls === 'Distraido' ? 'Distraído' : key;
+            criteriaTitle.innerHTML = `<i class="fa-solid fa-circle-check"></i> Criterios de Aceptación (${displayCls})`;
+            
+            const items = criteriaMap[key] || [];
+            items.forEach(text => {
+                const li = document.createElement('li');
+                li.className = 'criteria-item';
+                li.innerHTML = `<i class="fa-solid fa-check"></i> <span>${text}</span>`;
+                list.appendChild(li);
+            });
+        }
+
+        function updatePoseUI(pose, statusText) {
+            const statusBadge = document.getElementById('poseQualityStatus');
+            const pitchEl = document.getElementById('posePitch');
+            const yawEl = document.getElementById('poseYaw');
+            const rollEl = document.getElementById('poseRoll');
+            const interpretationEl = document.getElementById('poseInterpretation');
+            
+            statusBadge.innerText = statusText;
+            
+            if (statusText === "Estimado") {
+                statusBadge.style.background = "rgba(16, 185, 129, 0.15)";
+                statusBadge.style.color = "var(--color-success)";
+                statusBadge.style.borderColor = "rgba(16, 185, 129, 0.3)";
+            } else {
+                statusBadge.style.background = "rgba(255, 255, 255, 0.05)";
+                statusBadge.style.color = "var(--text-muted)";
+                statusBadge.style.borderColor = "rgba(255, 255, 255, 0.1)";
+            }
+            
+            if (pose) {
+                pitchEl.innerText = `${pose.pitch}°`;
+                yawEl.innerText = `${pose.yaw}°`;
+                rollEl.innerText = `${pose.roll}°`;
+                interpretationEl.innerText = getPoseInterpretation(pose);
+            } else {
+                pitchEl.innerText = '-';
+                yawEl.innerText = '-';
+                rollEl.innerText = '-';
+                interpretationEl.innerText = statusText === "Cargando..." ? "Calculando ángulos faciales..." : "No se pudo estimar la postura de la cabeza";
+            }
+        }
+
+        function getPoseInterpretation(pose) {
+            const p = pose.pitch;
+            const y = pose.yaw;
+            const r = pose.roll;
+            
+            if (Math.abs(p) <= 15 && Math.abs(y) <= 15 && Math.abs(r) <= 15) {
+                return "Orientación: Centrada y enfocada al frente (Atento)";
+            }
+            
+            let text = "Orientación: ";
+            if (p > 15) {
+                text += "Mirando hacia abajo / regazo. ";
+            } else if (p < -15) {
+                text += "Mirando hacia arriba. ";
+            }
+            
+            if (y > 18) {
+                text += "Cabeza girada a la derecha. ";
+            } else if (y < -18) {
+                text += "Cabeza girada a la izquierda. ";
+            }
+            
+            if (Math.abs(r) > 15) {
+                text += "Cabeza inclinada de lado.";
+            }
+            
+            return text.trim();
+        }
+
+        function navigateLightbox(direction) {
+            if (allImagesForTab.length === 0) return;
+            if (currentLightboxIndex === -1) return;
+            
+            currentLightboxIndex = (currentLightboxIndex + direction + allImagesForTab.length) % allImagesForTab.length;
+            const nextUrl = allImagesForTab[currentLightboxIndex];
+            loadLightboxFrame(nextUrl);
+        }
+
+        function handleLightboxKeyDown(event) {
+            if (event.key === 'ArrowRight') {
+                navigateLightbox(1);
+            } else if (event.key === 'ArrowLeft') {
+                navigateLightbox(-1);
+            } else if (event.key === 'Escape') {
+                closeLightbox();
+            }
+        }
+
+        function deleteFrameFromLightbox() {
+            if (currentLightboxIndex === -1 || allImagesForTab.length === 0) return;
+            
+            const imgUrl = allImagesForTab[currentLightboxIndex];
+            
+            fetch(`/api/dataset/delete-frame?img_url=${encodeURIComponent(imgUrl)}`, {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast("Imagen eliminada directamente", "success");
+                    
+                    allImagesForTab = allImagesForTab.filter(url => url !== imgUrl);
+                    document.getElementById('galleryCount').innerText = allImagesForTab.length;
+                    
+                    renderImagesLimit();
+                    fetchStatusCountOnly();
+                    
+                    if (allImagesForTab.length === 0) {
+                        closeLightbox();
+                    } else {
+                        if (currentLightboxIndex >= allImagesForTab.length) {
+                            currentLightboxIndex = 0;
+                        }
+                        const nextUrl = allImagesForTab[currentLightboxIndex];
+                        loadLightboxFrame(nextUrl);
+                    }
+                } else {
+                    showToast(data.message, "danger");
+                }
+            })
+            .catch(err => {
+                showToast("Error al conectar con el servidor", "danger");
+                console.error(err);
+            });
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightboxModal').style.display = 'none';
+            window.removeEventListener('keydown', handleLightboxKeyDown);
+        }
+
+        // Confirm Clear Modal Functions
+        function openClearConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function closeClearConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        // Clear dataset logic
+        function clearDataset() {
+            fetch('/api/dataset/clear', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast(data.message, 'success');
+                        closeClearConfirmModal();
+                        fetchStatus(); // Refresh counters & galleries
+                    }
+                })
+                .catch(err => {
+                    showToast("No se pudo vaciar el dataset", "danger");
+                    console.error(err);
+                });
+        }
+
+        // Training JS Integration
+        let trainPollingInterval = null;
+        let liveTrainingChart = null;
+        let isCurrentlyTrainingReal = false;
+        let lastRealPlottedEpoch = 0;
+
+        // Simulation variables
+        let isSimulating = false;
+        let simulationInterval = null;
+
+        function initLiveTrainingChart() {
+            const canvas = document.getElementById('live-training-chart');
+            if (!canvas) return;
+            
+            if (liveTrainingChart) {
+                liveTrainingChart.destroy();
+            }
+            
+            const ctx = canvas.getContext('2d');
+            liveTrainingChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Precisión (%)',
+                            data: [],
+                            borderColor: '#0ea5e9',
+                            backgroundColor: 'rgba(14, 165, 233, 0.05)',
+                            fill: true,
+                            yAxisID: 'y-accuracy',
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#0ea5e9'
+                        },
+                        {
+                            label: 'Pérdida',
+                            data: [],
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'rgba(244, 63, 94, 0.02)',
+                            fill: false,
+                            borderDash: [5, 5],
+                            yAxisID: 'y-loss',
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#f43f5e'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#f8fafc',
+                                font: { family: 'Outfit', size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94a3b8',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            titleFont: { family: 'Outfit' },
+                            bodyFont: { family: 'Outfit' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { family: 'Outfit', size: 10 }
+                            }
+                        },
+                        'y-accuracy': {
+                            type: 'linear',
+                            position: 'left',
+                            min: 20,
+                            max: 100,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: {
+                                color: '#0ea5e9',
+                                font: { family: 'Outfit', size: 10 },
+                                callback: function(value) { return value + '%'; }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Precisión',
+                                color: '#0ea5e9',
+                                font: { family: 'Outfit', size: 11, weight: 'bold' }
+                            }
+                        },
+                        'y-loss': {
+                            type: 'linear',
+                            position: 'right',
+                            min: 0,
+                            max: 2.0,
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                color: '#f43f5e',
+                                font: { family: 'Outfit', size: 10 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Pérdida',
+                                color: '#f43f5e',
+                                font: { family: 'Outfit', size: 11, weight: 'bold' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function appendConsoleLine(text, type = 'info') {
+            const consoleOutput = document.getElementById('console-output');
+            if (!consoleOutput) return;
+            
+            const line = document.createElement('div');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let color = '#10b981'; // green for normal logs
+            if (type === 'system') color = '#6b7280'; // gray
+            if (type === 'success') color = '#0ea5e9'; // cyan/blue
+            if (type === 'error') color = '#f43f5e'; // red
+            if (type === 'warning') color = '#f59e0b'; // orange
+            
+            line.style.color = color;
+            line.innerHTML = `<span style="color: #6b7280;">[${timestamp}]</span> ${text}`;
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function fetchTrainingStatus() {
+            if (isSimulating) return; // ignore during simulation
+            
+            fetch('/api/train/status')
+                .then(res => res.json())
+                .then(data => {
+                    updateTrainingUI(data);
+                    
+                    if (data.status === 'training') {
+                        if (!trainPollingInterval) {
+                            trainPollingInterval = setInterval(fetchTrainingStatus, 1500);
+                        }
+                    } else {
+                        if (trainPollingInterval) {
+                            clearInterval(trainPollingInterval);
+                            trainPollingInterval = null;
+                        }
+                        
+                        if (data.status === 'completed') {
+                            loadSavedMetrics();
+                        } else {
+                            fetch('/api/train/metrics')
+                                .then(res => res.json())
+                                .then(metricsData => {
+                                    if (metricsData.status === 'success') {
+                                        renderMetrics(metricsData.metrics);
+                                    }
+                                });
+                        }
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function startModelTraining() {
+            if (isSimulating) {
+                showToast("Detén la simulación primero antes de iniciar un entrenamiento real.", "warning");
+                return;
+            }
+            const epochs = document.getElementById('trainEpochs').value;
+            const batchSize = document.getElementById('trainBatchSize').value;
+            const lr = document.getElementById('trainLr').value;
+
+            fetch(`/api/train/start?epochs=${epochs}&batch_size=${batchSize}&lr=${lr}`, {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast("Entrenamiento de MobileViT iniciado", "success");
+                    fetchTrainingStatus();
+                } else {
+                    showToast(data.message, "danger");
+                }
+            })
+            .catch(err => {
+                showToast("Error al conectar con el servidor", "danger");
+                console.error(err);
+            });
+        }
+
+        function stopModelTraining() {
+            if (isSimulating) {
+                stopSimulation();
+                return;
+            }
+            
+            fetch('/api/train/stop', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    showToast(data.message, "warning");
+                    fetchTrainingStatus();
+                })
+                .catch(err => console.error(err));
+        }
+
+        function updateTrainingUI(data) {
+            const controls = document.getElementById('trainControls');
+            const progressPanel = document.getElementById('trainProgressPanel');
+            const metricsPanel = document.getElementById('trainMetricsPanel');
+            
+            const statusText = document.getElementById('trainStatusText');
+            const percentageText = document.getElementById('trainPercentage');
+            const progressBar = document.getElementById('trainProgressBar');
+            
+            const epochVal = document.getElementById('trainEpochVal');
+            const batchVal = document.getElementById('trainBatchVal');
+            const lossVal = document.getElementById('trainLossVal');
+            const valAccVal = document.getElementById('trainValAccVal');
+
+            if (data.status === 'training') {
+                if (!isCurrentlyTrainingReal) {
+                    isCurrentlyTrainingReal = true;
+                    lastRealPlottedEpoch = 0;
+                    initLiveTrainingChart();
+                    document.getElementById('console-output').innerHTML = '';
+                    appendConsoleLine("Iniciando entrenamiento real del clasificador MobileViT...", "system");
+                    appendConsoleLine(`Configuración: Épocas=${data.total_epochs}, Lote=${data.total_batches > 0 ? 'activo' : 'inicializando'}, Tasa de Aprendizaje=1e-4`, "system");
+                    appendConsoleLine("Esperando inicialización de los cargadores de datos...", "system");
+                }
+                
+                controls.style.display = 'none';
+                progressPanel.style.display = 'block';
+                metricsPanel.style.display = 'none';
+                
+                statusText.innerHTML = `<span class="loader-spinner"></span>Época ${data.current_epoch}/${data.total_epochs} (Entrenando...)`;
+                percentageText.innerText = `${data.percentage}%`;
+                progressBar.style.width = `${data.percentage}%`;
+                
+                epochVal.innerText = `${data.current_epoch} / ${data.total_epochs}`;
+                batchVal.innerText = `${data.batch_index} / ${data.total_batches}`;
+                lossVal.innerText = data.train_loss.toFixed(4);
+                valAccVal.innerText = `${(data.val_accuracy * 100).toFixed(1)}%`;
+
+                // Log batch details
+                const batchLog = `Época ${data.current_epoch}/${data.total_epochs} - Batch ${data.batch_index}/${data.total_batches} - Pérdida: ${data.train_loss.toFixed(4)}`;
+                if (!window.lastConsoleBatchLog || window.lastConsoleBatchLog !== batchLog) {
+                    if (data.batch_index > 0 && data.batch_index % 4 === 0) {
+                        appendConsoleLine(batchLog, "info");
+                        window.lastConsoleBatchLog = batchLog;
+                    }
+                }
+
+                // Epoch complete validation update using robust backend history
+                if (data.history && data.history.epochs) {
+                    const history = data.history;
+                    if (!liveTrainingChart) {
+                        initLiveTrainingChart();
+                    }
+                    liveTrainingChart.data.labels = history.epochs.map(e => `Época ${e}`);
+                    liveTrainingChart.data.datasets[0].data = history.val_accuracy.map(acc => (acc * 100).toFixed(2));
+                    liveTrainingChart.data.datasets[1].data = history.train_loss.map(loss => loss.toFixed(4));
+                    liveTrainingChart.update();
+
+                    const numPlotted = history.epochs.length;
+                    if (numPlotted > lastRealPlottedEpoch) {
+                        for (let i = lastRealPlottedEpoch; i < numPlotted; i++) {
+                            const epNum = history.epochs[i];
+                            const epLoss = history.val_loss[i];
+                            const epAcc = history.val_accuracy[i];
+                            appendConsoleLine(`Época ${epNum}/${data.total_epochs} completada. Loss Val: ${epLoss.toFixed(4)} - Acc Val: ${(epAcc * 100).toFixed(2)}%`, "success");
+                        }
+                        lastRealPlottedEpoch = numPlotted;
+                    }
+                }
+            } else if (data.status === 'completed') {
+                if (isCurrentlyTrainingReal) {
+                    isCurrentlyTrainingReal = false;
+                    appendConsoleLine("¡Entrenamiento del modelo finalizado de forma exitosa!", "success");
+                }
+                controls.style.display = 'flex';
+                progressPanel.style.display = 'none';
+                metricsPanel.style.display = 'flex';
+                if (data.metrics) {
+                    renderMetrics(data.metrics);
+                }
+            } else if (data.status === 'failed') {
+                isCurrentlyTrainingReal = false;
+                controls.style.display = 'flex';
+                progressPanel.style.display = 'none';
+                metricsPanel.style.display = 'none';
+                showToast(data.error, "danger");
+                appendConsoleLine(`Error en entrenamiento: ${data.error}`, "error");
+            } else {
+                isCurrentlyTrainingReal = false;
+                controls.style.display = 'flex';
+                progressPanel.style.display = 'none';
+            }
+        }
+
+        function loadSavedMetrics() {
+            fetch('/api/train/metrics')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderMetrics(data.metrics);
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        function renderMetrics(metrics) {
+            document.getElementById('trainMetricsPanel').style.display = 'flex';
+            document.getElementById('metricAccuracy').innerText = `${(metrics.final_accuracy * 100).toFixed(1)}%`;
+            
+            let dev = metrics.device_used || "cpu";
+            if (dev.includes("cuda")) {
+                dev = "Tarjeta Gráfica GPU (CUDA)";
+            } else {
+                dev = "Procesador CPU";
+            }
+            document.getElementById('metricDevice').innerText = dev;
+            document.getElementById('metricDevice').title = metrics.device_used;
+
+            const tbody = document.getElementById('metricsTableBody');
+            tbody.innerHTML = '';
+            
+            const classes = metrics.classes || ["Atento", "Distraído", "Sospechoso"];
+            classes.forEach(cls => {
+                const rep = metrics.classification_report[cls] || { precision: 0, recall: 0, "f1-score": 0 };
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+                tr.innerHTML = `
+                    <td style="padding: 0.5rem 0; font-weight: 500;">${cls}</td>
+                    <td style="padding: 0.5rem 0; text-align: right;">${(rep.precision * 100).toFixed(1)}%</td>
+                    <td style="padding: 0.5rem 0; text-align: right;">${(rep.recall * 100).toFixed(1)}%</td>
+                    <td style="padding: 0.5rem 0; text-align: right;">${(rep['f1-score'] * 100).toFixed(1)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const cm = metrics.confusion_matrix;
+            if (cm) {
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        const cell = document.getElementById(`cm_${i}_${j}`);
+                        const val = cm[i][j];
+                        cell.innerText = val;
+                        
+                        const rowTotal = cm[i].reduce((a, b) => a + b, 0);
+                        const intensity = rowTotal > 0 ? (val / rowTotal) : 0;
+                        
+                        if (i === j) {
+                            cell.style.background = `rgba(16, 185, 129, ${0.15 + intensity * 0.65})`;
+                            cell.style.color = intensity > 0.4 ? '#ffffff' : 'var(--color-success)';
+                        } else {
+                            cell.style.background = val > 0 ? `rgba(239, 68, 68, ${0.05 + intensity * 0.5})` : 'rgba(255,255,255,0.02)';
+                            cell.style.color = val > 0 ? '#fca5a5' : 'var(--text-muted)';
+                        }
+                    }
+                }
+            }
+
+            if (metrics.history) {
+                drawCurvesChart(metrics.history);
+            }
+        }
+
+        function drawCurvesChart(history) {
+            if (!liveTrainingChart) {
+                initLiveTrainingChart();
+            }
+            if (!liveTrainingChart || !history) return;
+            
+            const epochs = history.epochs || [];
+            const trainLoss = history.train_loss || [];
+            const valAccuracy = history.val_accuracy || [];
+            
+            liveTrainingChart.data.labels = epochs.map(e => `Época ${e}`);
+            liveTrainingChart.data.datasets[0].data = valAccuracy.map(acc => (acc * 100).toFixed(2));
+            liveTrainingChart.data.datasets[1].data = trainLoss.map(loss => loss.toFixed(4));
+            liveTrainingChart.update();
+        }
+
+        // Training Simulation Logic
+        function startTrainingSimulation() {
+            if (isSimulating) return;
+            
+            fetch('/api/train/status')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'training') {
+                        showToast("Hay un entrenamiento real en curso. No se puede iniciar la simulación.", "warning");
+                        return;
+                    }
+                    runSimulation();
+                })
+                .catch(err => {
+                    // Fallback to local simulation if server status is offline
+                    runSimulation();
+                });
+        }
+
+        function runSimulation() {
+            isSimulating = true;
+            
+            document.getElementById('trainControls').style.display = 'none';
+            document.getElementById('trainProgressPanel').style.display = 'block';
+            document.getElementById('trainMetricsPanel').style.display = 'none';
+            
+            initLiveTrainingChart();
+            
+            const consoleOutput = document.getElementById('console-output');
+            consoleOutput.innerHTML = '';
+            
+            appendConsoleLine("Iniciando Simulador de Entrenamiento MobileViT...", "system");
+            
+            // Check if there are real training metrics available on backend
+            fetch('/api/train/metrics')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.metrics && data.metrics.history && data.metrics.history.epochs.length > 0) {
+                        runRealDataSimulation(data.metrics);
+                    } else {
+                        appendConsoleLine("No se detectó un modelo real entrenado. Iniciando simulación matemática de referencia...", "warning");
+                        runMathSimulation();
+                    }
+                })
+                .catch(err => {
+                    appendConsoleLine("Error al obtener métricas reales. Iniciando simulación matemática de referencia...", "warning");
+                    runMathSimulation();
+                });
+        }
+
+        function runRealDataSimulation(metrics) {
+            appendConsoleLine(`Historial de entrenamiento real detectado (Dispositivo: ${metrics.device_used || 'tarjeta GPU'}).`, "system");
+            appendConsoleLine("Simulando curvas y métricas reales obtenidas en el entrenamiento a alta velocidad...", "system");
+            
+            const history = metrics.history;
+            const totalEpochs = history.epochs.length;
+            const totalBatches = 10;
+            
+            let epochIdx = 0;
+            let batch = 0;
+            
+            function runBatchStep() {
+                if (!isSimulating) return;
+                
+                batch++;
+                if (batch > totalBatches) {
+                    const epochNum = history.epochs[epochIdx];
+                    const valAcc = history.val_accuracy[epochIdx];
+                    const trainLoss = history.train_loss[epochIdx];
+                    const valLoss = history.val_loss ? history.val_loss[epochIdx] : (trainLoss * 0.85); // fallback
+                    
+                    // Push to chart
+                    liveTrainingChart.data.labels.push(`Época ${epochNum}`);
+                    liveTrainingChart.data.datasets[0].data.push((valAcc * 100).toFixed(2));
+                    liveTrainingChart.data.datasets[1].data.push(trainLoss.toFixed(4));
+                    liveTrainingChart.update();
+                    
+                    appendConsoleLine(`Época ${epochNum}/${totalEpochs} completada. Loss Val: ${valLoss.toFixed(4)} - Acc Val: ${(valAcc * 100).toFixed(2)}%`, "success");
+                    
+                    document.getElementById('trainEpochVal').innerText = `${epochNum} / ${totalEpochs}`;
+                    document.getElementById('trainLossVal').innerText = trainLoss.toFixed(4);
+                    document.getElementById('trainValAccVal').innerText = `${(valAcc * 100).toFixed(1)}%`;
+                    
+                    epochIdx++;
+                    batch = 1;
+                    
+                    if (epochIdx >= totalEpochs) {
+                        endRealSimulation(metrics);
+                        return;
+                    }
+                }
+                
+                const currentEpochNum = history.epochs[epochIdx];
+                const baseLoss = history.train_loss[epochIdx];
+                const currentBatchLoss = baseLoss * (1.0 + (Math.random() - 0.5) * 0.12);
+                
+                document.getElementById('trainStatusText').innerHTML = `<span class="loader-spinner"></span>Época ${currentEpochNum}/${totalEpochs} (Simulando...)`;
+                document.getElementById('trainEpochVal').innerText = `${currentEpochNum} / ${totalEpochs}`;
+                document.getElementById('trainBatchVal').innerText = `${batch} / ${totalBatches}`;
+                document.getElementById('trainLossVal').innerText = currentBatchLoss.toFixed(4);
+                
+                const percent = Math.round(((epochIdx + (batch / totalBatches)) / totalEpochs) * 100);
+                document.getElementById('trainPercentage').innerText = `${percent}%`;
+                document.getElementById('trainProgressBar').style.width = `${percent}%`;
+                
+                if (batch % 3 === 0) {
+                    appendConsoleLine(`Época ${currentEpochNum}/${totalEpochs} - Batch ${batch}/${totalBatches} - Loss: ${currentBatchLoss.toFixed(4)}`);
+                }
+                
+                simulationInterval = setTimeout(runBatchStep, 80); // Fast simulation
+            }
+            
+            runBatchStep();
+        }
+
+        function runMathSimulation() {
+            appendConsoleLine("Dispositivo de hardware simulado: GPU NVIDIA GeForce GTX 1650 (CUDA 12.1)", "system");
+            appendConsoleLine("Cargando dataset de rostros enmascarados desde el disco...", "system");
+            
+            const countAtento = parseInt(document.getElementById('countAtento').innerText) || 300;
+            const countDistraido = parseInt(document.getElementById('countDistraido').innerText) || 300;
+            const countSospechoso = parseInt(document.getElementById('countSospechoso').innerText) || 300;
+            const totalSamples = countAtento + countDistraido + countSospechoso;
+            
+            setTimeout(() => {
+                appendConsoleLine(`Dataset cargado: ${totalSamples} imágenes en total (Atento: ${countAtento}, Distraído: ${countDistraido}, Sospechoso: ${countSospechoso}).`, "info");
+                appendConsoleLine("Inicializando arquitectura de red MobileViT (xxs backbone + Classification Head)...", "info");
+                appendConsoleLine("Estableciendo optimizador AdamW con discriminación de tasas (Backbone LR: 1e-5, Head LR: 1e-4)...", "info");
+                appendConsoleLine("Comenzando entrenamiento...", "success");
+                
+                let epoch = 0;
+                const totalEpochs = 15;
+                let accuracy = 22.4;
+                let loss = 1.68;
+                
+                let batch = 0;
+                const totalBatches = 12;
+                
+                function runBatchStep() {
+                    if (!isSimulating) return;
+                    
+                    batch++;
+                    if (batch > totalBatches) {
+                        epoch++;
+                        batch = 1;
+                        
+                        const targetAcc = 94.5;
+                        accuracy += (targetAcc - accuracy) * 0.075 + (Math.random() - 0.5) * 2.2;
+                        accuracy = Math.min(accuracy, 98.2);
+                        
+                        loss = (1.7 / (epoch * 0.15 + 1)) + (Math.random() * 0.03);
+                        
+                        liveTrainingChart.data.labels.push(`Época ${epoch}`);
+                        liveTrainingChart.data.datasets[0].data.push(accuracy.toFixed(2));
+                        liveTrainingChart.data.datasets[1].data.push(loss.toFixed(4));
+                        liveTrainingChart.update();
+                        
+                        appendConsoleLine(`Época ${epoch}/${totalEpochs} completada. Loss Val: ${loss.toFixed(4)} - Acc Val: ${accuracy.toFixed(2)}%`, "success");
+                        
+                        document.getElementById('trainEpochVal').innerText = `${epoch} / ${totalEpochs}`;
+                        document.getElementById('trainLossVal').innerText = loss.toFixed(4);
+                        document.getElementById('trainValAccVal').innerText = `${accuracy.toFixed(1)}%`;
+                        
+                        if (epoch >= totalEpochs) {
+                            endMathSimulation(accuracy);
+                            return;
+                        }
+                    }
+                    
+                    const currentBatchLoss = loss * (1.0 + (Math.random() - 0.5) * 0.15);
+                    document.getElementById('trainStatusText').innerHTML = `<span class="loader-spinner"></span>Época ${epoch + 1}/${totalEpochs} (Simulando...)`;
+                    document.getElementById('trainEpochVal').innerText = `${epoch + 1} / ${totalEpochs}`;
+                    document.getElementById('trainBatchVal').innerText = `${batch} / ${totalBatches}`;
+                    document.getElementById('trainLossVal').innerText = currentBatchLoss.toFixed(4);
+                    
+                    const percent = Math.round(((epoch + (batch / totalBatches)) / totalEpochs) * 100);
+                    document.getElementById('trainPercentage').innerText = `${percent}%`;
+                    document.getElementById('trainProgressBar').style.width = `${percent}%`;
+                    
+                    if (batch % 4 === 0) {
+                        appendConsoleLine(`Época ${epoch + 1}/${totalEpochs} - Batch ${batch}/${totalBatches} - Loss: ${currentBatchLoss.toFixed(4)}`);
+                    }
+                    
+                    simulationInterval = setTimeout(runBatchStep, 150);
+                }
+                
+                runBatchStep();
+                
+            }, 1200);
+        }
+
+        function stopSimulation() {
+            if (simulationInterval) {
+                clearTimeout(simulationInterval);
+                simulationInterval = null;
+            }
+            isSimulating = false;
+            
+            document.getElementById('trainControls').style.display = 'flex';
+            document.getElementById('trainProgressPanel').style.display = 'none';
+            document.getElementById('trainMetricsPanel').style.display = 'none';
+            
+            showToast("Simulación detenida por el usuario", "warning");
+            appendConsoleLine("Simulación detenida.", "error");
+        }
+
+        function endRealSimulation(metrics) {
+            isSimulating = false;
+            if (simulationInterval) {
+                clearTimeout(simulationInterval);
+                simulationInterval = null;
+            }
+            
+            document.getElementById('trainControls').style.display = 'flex';
+            document.getElementById('trainProgressPanel').style.display = 'none';
+            
+            showToast("Simulación con datos reales finalizada", "success");
+            appendConsoleLine(`Simulación finalizada. Precisión real final: ${(metrics.final_accuracy * 100).toFixed(2)}%`, "success");
+            
+            renderMetrics(metrics);
+        }
+
+        function endMathSimulation(finalAcc) {
+            isSimulating = false;
+            if (simulationInterval) {
+                clearTimeout(simulationInterval);
+                simulationInterval = null;
+            }
+            
+            document.getElementById('trainControls').style.display = 'flex';
+            document.getElementById('trainProgressPanel').style.display = 'none';
+            document.getElementById('trainMetricsPanel').style.display = 'flex';
+            
+            showToast("Simulación de entrenamiento finalizada", "success");
+            appendConsoleLine(`Simulación finalizada. Precisión final: ${finalAcc.toFixed(2)}%`, "success");
+            appendConsoleLine("Modelo simulado guardado en memoria caché del cliente.", "success");
+            
+            document.getElementById('metricAccuracy').innerText = `${finalAcc.toFixed(1)}%`;
+            document.getElementById('metricDevice').innerText = "GPU Simulado (NVIDIA GTX 1650)";
+            document.getElementById('metricDevice').title = "CUDA active (Simulated)";
+            
+            const tbody = document.getElementById('metricsTableBody');
+            tbody.innerHTML = '';
+            
+            const classes = ["Atento", "Distraído", "Sospechoso"];
+            const fAcc = finalAcc / 100;
+            
+            classes.forEach((cls, idx) => {
+                const variation = (Math.random() - 0.5) * 0.04;
+                const prec = Math.min(0.99, fAcc + variation);
+                const rec = Math.min(0.99, fAcc - variation);
+                const f1 = 2 * (prec * rec) / (prec + rec);
+                
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+                tr.innerHTML = `
+                    <td style="padding: 0.5rem 0; font-weight: 500;">${cls}</td>
+                    <td style="padding: 0.5rem 0; text-align: right;">${(prec * 100).toFixed(1)}%</td>
+                    <td style="padding: 0.5rem 0; text-align: right;">${(rec * 100).toFixed(1)}%</td>
+                    <td style="padding: 0.5rem 0; text-align: right;">${(f1 * 100).toFixed(1)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            const cm = [
+                [Math.round(100 * (fAcc + 0.02)), Math.round(100 * (1 - fAcc) / 2), Math.round(100 * (1 - fAcc) / 2)],
+                [Math.round(100 * (1 - fAcc) / 2), Math.round(100 * (fAcc - 0.01)), Math.round(100 * (1 - fAcc) / 2)],
+                [Math.round(100 * (1 - fAcc) / 2), Math.round(100 * (1 - fAcc) / 2), Math.round(100 * (fAcc - 0.01))]
+            ];
+            
+            for (let i = 0; i < 3; i++) {
+                const sum = cm[i][0] + cm[i][1] + cm[i][2];
+                const diff = 100 - sum;
+                cm[i][i] += diff;
+            }
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const cell = document.getElementById(`cm_${i}_${j}`);
+                    const val = cm[i][j];
+                    cell.innerText = val;
+                    
+                    const intensity = val / 100;
+                    
+                    if (i === j) {
+                        cell.style.background = `rgba(16, 185, 129, ${0.15 + intensity * 0.65})`;
+                        cell.style.color = intensity > 0.4 ? '#ffffff' : 'var(--color-success)';
+                    } else {
+                        cell.style.background = val > 0 ? `rgba(239, 68, 68, ${0.05 + intensity * 0.5})` : 'rgba(255,255,255,0.02)';
+                        cell.style.color = val > 0 ? '#fca5a5' : 'var(--text-muted)';
+                    }
+                }
+            }
+        }
+
+        // Live Demo Webcam Integration
+        let webcamStream = null;
+        let webcamActive = false;
+        let predictionLoop = null;
+        let isPredicting = false;
+        let liveLandmarks = null;
+        
+        // Temporal Smoothing variables
+        let liveSmoothingWindow = 8;
+        let liveProbabilityHistory = [];
+        
+        function updateSmoothingValue(val) {
+            liveSmoothingWindow = parseInt(val);
+            const label = document.getElementById('liveSmoothingValLabel');
+            if (label) {
+                label.innerText = val === '1' ? '1 frame (Off)' : `${val} frames`;
+            }
+        }
+
+        async function toggleWebcam() {
+            const startBtn = document.getElementById('startCamBtn');
+            const statusLabel = document.getElementById('camStatusLabel');
+            const overlay = document.getElementById('webcamOverlayText');
+            const video = document.getElementById('webcamVideo');
+            const canvas = document.getElementById('webcamCanvas');
+            
+            if (webcamActive) {
+                // STOP WEBCAM
+                stopWebcamStream();
+                startBtn.className = 'btn btn-primary';
+                startBtn.innerHTML = '<i class="fa-solid fa-camera"></i> Iniciar Webcam';
+                statusLabel.innerText = 'Cámara apagada';
+                overlay.style.display = 'flex';
+                overlay.innerHTML = '<i class="fa-solid fa-camera" style="font-size: 2rem; opacity: 0.4;"></i><span>Haz clic en "Iniciar Webcam" para comenzar</span>';
+                
+                // Reset predictions UI
+                liveProbabilityHistory = [];
+                document.getElementById('livePredictionBadge').innerText = 'INACTIVO';
+                document.getElementById('livePredictionBadge').style.color = 'var(--text-muted)';
+                document.getElementById('livePredictionBadge').style.textShadow = 'none';
+                document.getElementById('livePredictionBadge').parentNode.style.background = 'rgba(255,255,255,0.02)';
+                document.getElementById('livePredictionBadge').parentNode.style.borderColor = 'rgba(255,255,255,0.05)';
+                
+                ['Atento', 'Distraido', 'Sospechoso'].forEach(c => {
+                    const cKey = c === 'Distraido' ? 'Distraido' : c;
+                    document.getElementById(`liveProb${cKey}`).innerText = '0%';
+                    document.getElementById(`liveBar${cKey}`).style.width = '0%';
+                });
+                
+                document.getElementById('livePosePitch').innerText = '-';
+                document.getElementById('livePoseYaw').innerText = '-';
+                document.getElementById('livePoseRoll').innerText = '-';
+                
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            } else {
+                // START WEBCAM
+                overlay.innerHTML = '<span class="loader-spinner" style="width:30px; height:30px;"></span><span>Iniciando cámara...</span>';
+                
+                try {
+                    webcamStream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 640, height: 480, facingMode: 'user' },
+                        audio: false
+                    });
+                    
+                    video.srcObject = webcamStream;
+                    webcamActive = true;
+                    startBtn.className = 'btn btn-danger';
+                    startBtn.innerHTML = '<i class="fa-solid fa-video-slash"></i> Apagar Webcam';
+                    statusLabel.innerText = 'Streaming en vivo';
+                    overlay.style.display = 'none';
+                    
+                    // Start classification loop
+                    isPredicting = true;
+                    predictionLoop = setInterval(runWebcamFrameInference, 200); // 5 inferences per second
+                    requestAnimationFrame(drawWebcamStream);
+                } catch (err) {
+                    console.error("Error accessing webcam:", err);
+                    showToast("No se pudo acceder a la cámara. Revisa los permisos.", "danger");
+                    overlay.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; color: var(--color-danger);"></i><span>Error al acceder a la cámara</span>';
+                }
+            }
+        }
+
+        function stopWebcamStream() {
+            webcamActive = false;
+            isPredicting = false;
+            liveProbabilityHistory = [];
+            if (predictionLoop) {
+                clearInterval(predictionLoop);
+                predictionLoop = null;
+            }
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                webcamStream = null;
+            }
+        }
+
+        function drawWebcamStream() {
+            if (!webcamActive) return;
+            
+            const video = document.getElementById('webcamVideo');
+            const canvas = document.getElementById('webcamCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            
+            // Draw video frame mirrored for natural look
+            ctx.save();
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+            
+            // Draw overlay landmarks if available
+            if (liveLandmarks && liveLandmarks.length > 0) {
+                ctx.fillStyle = '#06b6d4';
+                ctx.shadowBlur = 3;
+                ctx.shadowColor = '#06b6d4';
+                
+                const w = canvas.width;
+                const h = canvas.height;
+                
+                liveLandmarks.forEach(pt => {
+                    ctx.beginPath();
+                    // Mirror landmarks to match mirrored video display
+                    ctx.arc((1 - pt.x) * w, pt.y * h, 1.2, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+                
+                ctx.shadowBlur = 0;
+            }
+            
+            requestAnimationFrame(drawWebcamStream);
+        }
+
+        function runWebcamFrameInference() {
+            if (!webcamActive || !isPredicting) return;
+            
+            const video = document.getElementById('webcamVideo');
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 640; // higher resolution for accurate face details
+            tempCanvas.height = 480;
+            
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            const base64Image = tempCanvas.toDataURL('image/jpeg', 0.82);
+            
+            fetch('/api/train/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64Image })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!webcamActive) return; // avoid updating UI if webcam was stopped while fetching
+                
+                if (data.status === 'success') {
+                    const probs = data.probabilities;
+                    const pose = data.pose;
+                    liveLandmarks = data.landmarks;
+                    
+                    // Add to sliding history
+                    liveProbabilityHistory.push(probs);
+                    while (liveProbabilityHistory.length > liveSmoothingWindow) {
+                        liveProbabilityHistory.shift();
+                    }
+                    
+                    // Compute rolling average probabilities
+                    let avgProbs = { 'Atento': 0.0, 'Distraído': 0.0, 'Sospechoso': 0.0 };
+                    liveProbabilityHistory.forEach(item => {
+                        avgProbs['Atento'] += item['Atento'] || 0;
+                        avgProbs['Distraído'] += item['Distraído'] || item['Distraido'] || 0;
+                        avgProbs['Sospechoso'] += item['Sospechoso'] || 0;
+                    });
+                    
+                    const count = liveProbabilityHistory.length;
+                    avgProbs['Atento'] /= count;
+                    avgProbs['Distraído'] /= count;
+                    avgProbs['Sospechoso'] /= count;
+                    
+                    // Choose smoothed class
+                    let pClass = 'Atento';
+                    let maxProb = avgProbs['Atento'];
+                    if (avgProbs['Distraído'] > maxProb) {
+                        pClass = 'Distraído';
+                        maxProb = avgProbs['Distraído'];
+                    }
+                    if (avgProbs['Sospechoso'] > maxProb) {
+                        pClass = 'Sospechoso';
+                        maxProb = avgProbs['Sospechoso'];
+                    }
+                    
+                    const badge = document.getElementById('livePredictionBadge');
+                    badge.innerText = pClass.toUpperCase();
+                    
+                    let color = 'var(--text-main)';
+                    let glow = 'rgba(255,255,255,0.05)';
+                    let bg = 'rgba(255,255,255,0.02)';
+                    
+                    if (pClass === 'Atento') {
+                        color = 'var(--color-atento)';
+                        glow = 'var(--color-atento-glow)';
+                        bg = 'rgba(6, 182, 212, 0.05)';
+                    } else if (pClass === 'Distraído' || pClass === 'Distraido') {
+                        color = 'var(--color-distraido)';
+                        glow = 'var(--color-distraido-glow)';
+                        bg = 'rgba(249, 115, 22, 0.05)';
+                    } else if (pClass === 'Sospechoso') {
+                        color = 'var(--color-sospechoso)';
+                        glow = 'var(--color-sospechoso-glow)';
+                        bg = 'rgba(236, 72, 153, 0.05)';
+                    }
+                    
+                    badge.style.color = color;
+                    badge.style.textShadow = `0 0 12px ${color}`;
+                    badge.parentNode.style.background = bg;
+                    badge.parentNode.style.borderColor = color;
+                    
+                    // Update probability bars
+                    ['Atento', 'Distraido', 'Sospechoso'].forEach(c => {
+                        const spanishKey = c === 'Distraido' ? 'Distraído' : c;
+                        const prob = avgProbs[spanishKey] || 0.0;
+                        const percent = (prob * 100).toFixed(0) + '%';
+                        
+                        document.getElementById(`liveProb${c}`).innerText = percent;
+                        document.getElementById(`liveBar${c}`).style.width = percent;
+                    });
+                    
+                    // Update pose info
+                    if (pose) {
+                        document.getElementById('livePosePitch').innerText = `${pose.pitch}°`;
+                        document.getElementById('livePoseYaw').innerText = `${pose.yaw}°`;
+                        document.getElementById('livePoseRoll').innerText = `${pose.roll}°`;
+                    } else {
+                        document.getElementById('livePosePitch').innerText = '-';
+                        document.getElementById('livePoseYaw').innerText = '-';
+                        document.getElementById('livePoseRoll').innerText = '-';
+                    }
+                } else if (data.status === 'no_face') {
+                    document.getElementById('livePredictionBadge').innerText = 'SIN ROSTRO';
+                    document.getElementById('livePredictionBadge').style.color = 'var(--color-danger)';
+                    document.getElementById('livePredictionBadge').style.textShadow = '0 0 10px rgba(239, 68, 68, 0.4)';
+                    document.getElementById('livePredictionBadge').parentNode.style.background = 'rgba(239, 68, 68, 0.05)';
+                    document.getElementById('livePredictionBadge').parentNode.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                    
+                    liveLandmarks = null;
+                    document.getElementById('livePosePitch').innerText = '-';
+                    document.getElementById('livePoseYaw').innerText = '-';
+                    document.getElementById('livePoseRoll').innerText = '-';
+                    
+                    ['Atento', 'Distraido', 'Sospechoso'].forEach(c => {
+                        const cKey = c === 'Distraido' ? 'Distraido' : c;
+                        document.getElementById(`liveProb${cKey}`).innerText = '0%';
+                        document.getElementById(`liveBar${cKey}`).style.width = '0%';
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("Prediction API error:", err);
+            });
+        }
+    </script>
+</body>
+</html>
